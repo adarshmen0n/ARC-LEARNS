@@ -26,7 +26,7 @@ client = OpenAI(
 # FREE MODEL ROUTER
 # ============================================================
 
-MODEL = "openrouter/free"
+MODEL = "openai/gpt-oss-20b:free"
 
 
 # ============================================================

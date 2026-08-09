@@ -8,17 +8,19 @@ from app.services.ai_manager import (
     ask_ai_stream
 )
 
-
 router = APIRouter()
 
 
-class ChatRequest(BaseModel):
+# ============================================================
+# REQUEST MODEL
+# ============================================================
 
+class ChatRequest(BaseModel):
     question: str
 
 
 # ============================================================
-# NORMAL ASK AI
+# NORMAL CHAT
 # ============================================================
 
 @router.post("/chat")
@@ -26,39 +28,33 @@ def chat(data: ChatRequest):
 
     question = data.question.strip()
 
-
     if not question:
-
         return {
             "question": "",
             "answer": "Please enter a question.",
             "source_chunks": []
         }
 
-
     # --------------------------------------------------------
-    # Search uploaded study material
+    # Retrieve uploaded study material
     # --------------------------------------------------------
 
     results = search(question)
 
-
-    context = "\n\n".join(results)
-
+    context = "\n\n".join(results[:5])
 
     # --------------------------------------------------------
     # Ask AI
     #
-    # Web search is enabled.
-    # The AI can use it when current information is needed.
+    # Web search OFF.
+    # This chat is based on uploaded material.
     # --------------------------------------------------------
 
     answer = ask_ai(
         context,
         question,
-        use_web_search=True
+        use_web_search=False
     )
-
 
     return {
         "question": question,
@@ -68,7 +64,7 @@ def chat(data: ChatRequest):
 
 
 # ============================================================
-# STREAMING ASK AI
+# STREAMING CHAT
 # ============================================================
 
 @router.post("/chat/stream")
@@ -76,50 +72,50 @@ def chat_stream(data: ChatRequest):
 
     question = data.question.strip()
 
-
     if not question:
 
         return StreamingResponse(
-
             iter([
                 "Please enter a question."
             ]),
-
-            media_type="text/plain"
+            media_type="text/plain",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no"
+            }
         )
 
-
     # --------------------------------------------------------
-    # Search uploaded study material
+    # Retrieve study material
     # --------------------------------------------------------
 
     results = search(question)
 
-
-    context = "\n\n".join(results)
-
+    context = "\n\n".join(results[:5])
 
     # --------------------------------------------------------
-    # Streaming AI response
+    # Start AI streaming
     #
-    # Web search is enabled.
+    # IMPORTANT:
+    # Web search is OFF.
     # --------------------------------------------------------
 
     stream = ask_ai_stream(
         context,
         question,
-        use_web_search=True
+        use_web_search=False
     )
 
+    # --------------------------------------------------------
+    # Return chunks immediately
+    # --------------------------------------------------------
 
     return StreamingResponse(
-
         stream,
-
-        media_type="text/plain",
-
+        media_type="text/plain; charset=utf-8",
         headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no"
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive"
         }
     )
