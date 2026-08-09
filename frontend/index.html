@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ARC LEARNS | AI Learning Platform</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     SIDEBAR
+========================= -->
+
+<aside class="sidebar">
+
+    <div class="logo">
+
+        <div class="logo-icon">
+            A
+        </div>
+
+        <div class="logo-text">
+
+            <h2>
+                ARC LEARNS
+            </h2>
+
+            <span>
+                AI Learning Platform
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <nav class="navigation">
+
+        <button
+            class="nav-item active"
+            onclick="showSection('dashboard', this)"
+        >
+
+            <span>⌂</span>
+
+            Dashboard
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            onclick="showSection('learn', this)"
+        >
+
+            <span>📚</span>
+
+            AI Teacher
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            onclick="showSection('chat', this)"
+        >
+
+            <span>💬</span>
+
+            Ask AI
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            onclick="showSection('arc0', this)"
+        >
+
+            <span>🤖</span>
+
+            ARC 0
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            onclick="showSection('quiz', this)"
+        >
+
+            <span>🎯</span>
+
+            Quiz
+
+        </button>
+
+
+       
+
+    </nav>
+
+
+    <div class="sidebar-bottom">
+
+        <div class="ai-status">
+
+            <div class="status-dot"></div>
+
+            <div>
+
+                <strong>
+                    ARC AI Online
+                </strong>
+
+                <small>
+                    Learning engine ready
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</aside>
+
+
+<!-- =========================
+     MAIN
+========================= -->
+
+<main class="main">
+
+
+    <!-- TOP BAR -->
+
+    <header class="topbar">
+
+        <div>
+
+            <p class="welcome-small">
+                WELCOME BACK
+            </p>
+
+            <h1 id="pageTitle">
+                Learning Dashboard
+            </h1>
+
+        </div>
+
+
+        <div class="profile">
+
+            <div class="profile-avatar">
+                A
+            </div>
+
+            <div>
+
+                <strong>
+                    Student
+                </strong>
+
+                <small>
+                    AI Learner
+                </small>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         DASHBOARD
+    ========================= -->
+
+    <section
+        id="dashboard"
+        class="section active-section"
+    >
+
+
+        <!-- HERO -->
+
+        <div class="hero">
+
+            <div class="hero-content">
+
+                <span class="badge">
+                    AI-POWERED LEARNING
+                </span>
+
+
+                <h2>
+
+                    Learn smarter.<br>
+
+                    <span>
+                        Learn with ARC.
+                    </span>
+
+                </h2>
+
+
+                <p>
+
+                    Upload your study material and let
+                    ARC LEARNS transform it into lessons,
+                    AI conversations and interactive quizzes.
+
+                </p>
+
+
+                <button
+                    class="primary-btn"
+                    onclick="showSection('learn')"
+                >
+
+                    Start Learning →
+
+                </button>
+
+            </div>
+
+
+            <div class="hero-orb">
+
+                <div class="orb-ring">
+
+                    <div class="orb-inner">
+                        ARC
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             UPLOAD
+        ========================= -->
+
+        <div class="upload-card">
+
+
+            <div class="upload-icon">
+                📄
+            </div>
+
+
+            <div class="upload-content">
+
+                <h3>
+                    Upload Study Material
+                </h3>
+
+
+                <p>
+
+                    Upload your study material and ARC AI
+                    will process it for intelligent learning.
+                    PDF, Word, Text and CSV files are supported.
+
+                </p>
+
+
+                <div class="upload-row">
+
+                    <input
+                        type="file"
+                        id="pdfFile"
+                        accept=".pdf,.docx,.txt,.csv"
+                    >
+
+
+                    <button
+                        class="primary-btn"
+                        onclick="uploadPDF()"
+                    >
+
+                        Upload File
+
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="uploadStatus"
+                    class="status-message"
+                ></div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             QUICK ACTIONS
+        ========================= -->
+
+        <h2 class="section-heading">
+            Quick Actions
+        </h2>
+
+
+        <div class="action-grid">
+
+
+            <div
+                class="action-card"
+                onclick="showSection('learn')"
+            >
+
+                <div class="action-icon purple">
+                    📖
+                </div>
+
+                <h3>
+                    AI Teacher
+                </h3>
+
+                <p>
+                    Learn any topic from your uploaded material.
+                </p>
+
+                <span>
+                    Teach me →
+                </span>
+
+            </div>
+
+
+            <div
+                class="action-card"
+                onclick="showSection('chat')"
+            >
+
+                <div class="action-icon blue">
+                    💬
+                </div>
+
+                <h3>
+                    Ask ARC AI
+                </h3>
+
+                <p>
+                    Ask questions about your study material.
+                </p>
+
+                <span>
+                    Ask something →
+                </span>
+
+            </div>
+
+
+            <div
+                class="action-card"
+                onclick="showSection('quiz')"
+            >
+
+                <div class="action-icon orange">
+                    🎯
+                </div>
+
+                <h3>
+                    Take Quiz
+                </h3>
+
+                <p>
+                    Test your knowledge with AI-generated questions.
+                </p>
+
+                <span>
+                    Start quiz →
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+
+    </section>
+
+
+    <!-- =========================
+         AI TEACHER
+    ========================= -->
+
+    <section
+        id="learn"
+        class="section"
+    >
+
+        <div class="section-intro">
+
+            <span class="badge">
+                AI TEACHER
+            </span>
+
+            <h2>
+                Learn with ARC AI
+            </h2>
+
+            <p>
+                Enter a topic from your uploaded study material.
+            </p>
+
+        </div>
+
+
+        <div class="teacher-box">
+
+            <input
+                type="text"
+                id="teachTopic"
+                placeholder="Example: Machine Learning"
+            >
+
+
+            <select
+                id="teachLength"
+                aria-label="Teaching length"
+            >
+
+                <option value="short">
+                    Short
+                </option>
+
+                <option value="medium" selected>
+                    Medium
+                </option>
+
+                <option value="long">
+                    Long
+                </option>
+
+            </select>
+
+
+            <button
+                class="primary-btn"
+                onclick="teachTopic()"
+            >
+
+                Teach Me
+
+            </button>
+
+        </div>
+
+
+        <div
+            id="lessonOutput"
+            class="output-card"
+        >
+
+            <div class="empty-state">
+
+                <div>
+                    📖
+                </div>
+
+                <h3>
+                    Your lesson will appear here
+                </h3>
+
+                <p>
+                    Enter a topic above and ARC AI will teach you.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+        <!-- =========================
+         CHAT
+    ========================= -->
+
+    <section
+        id="chat"
+        class="section"
+    >
+
+
+        <div class="section-intro">
+
+            <span class="badge">
+                ARC AI
+            </span>
+
+            <h2>
+                Ask your AI Teacher
+            </h2>
+
+            <p>
+                Ask questions based on your uploaded study material.
+            </p>
+
+        </div>
+
+
+        <div class="chat-container">
+
+
+            <div
+                id="chatMessages"
+                class="chat-messages"
+            >
+
+
+                <div class="message ai-message">
+
+                    <div class="message-avatar">
+                        A
+                    </div>
+
+
+                    <div class="message-content">
+
+                        <strong>
+                            ARC AI
+                        </strong>
+
+                        <p>
+
+                            Hi! I'm ARC AI.
+                            Ask me anything from your
+                            uploaded study material.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <div class="chat-input">
+
+                <input
+                    type="text"
+                    id="chatQuestion"
+                    placeholder="Ask something..."
+                    onkeydown="handleChatKey(event)"
+                >
+
+
+                <button
+                    class="send-btn"
+                    onclick="sendChat()"
+                >
+
+                    →
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         ARC 0
+    ========================= -->
+
+    <section
+        id="arc0"
+        class="section"
+    >
+
+
+        <div class="section-intro">
+
+            <span class="badge">
+                ARC 0
+            </span>
+
+            <h2>
+                Your AI Assistant
+            </h2>
+
+            <p>
+                Ask ARC 0 general questions and get direct AI answers.
+            </p>
+
+        </div>
+
+
+        <div class="chat-container">
+
+            <div
+                id="arc0Messages"
+                class="chat-messages"
+            >
+
+                <div class="message ai-message">
+
+                    <div class="message-avatar">
+                        A
+                    </div>
+
+                    <div class="message-content">
+
+                        <strong>
+                            ARC 0
+                        </strong>
+
+                        <p>
+                            Hi! I'm ARC 0. Ask me anything.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="chat-input">
+
+                <input
+                    type="text"
+                    id="arc0Question"
+                    placeholder="Ask ARC 0 anything..."
+                    onkeydown="handleARC0Key(event)"
+                >
+
+
+                <button
+                    class="send-btn"
+                    onclick="sendARC0FromUI()"
+                >
+
+                    →
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         QUIZ
+    ========================= -->
+
+    <section
+        id="quiz"
+        class="section"
+    >
+
+
+        <div class="section-intro">
+
+            <span class="badge">
+                AI QUIZ
+            </span>
+
+            <h2>
+                Test your knowledge
+            </h2>
+
+            <p>
+                Generate an interactive quiz from your study material.
+            </p>
+
+        </div>
+
+
+        <div class="quiz-start">
+
+            <input
+                type="text"
+                id="quizTopic"
+                placeholder="Example: Machine Learning"
+            >
+
+
+            <input
+                type="number"
+                id="quizQuestionCount"
+                min="1"
+                max="50"
+                value="5"
+                placeholder="Questions"
+                aria-label="Number of quiz questions"
+            >
+
+
+            <button
+                class="primary-btn"
+                onclick="generateQuiz()"
+            >
+
+                Generate Quiz
+
+            </button>
+
+        </div>
+
+
+        <div
+            id="quizOutput"
+            class="quiz-output"
+        >
+
+            <div class="empty-state">
+
+                <div>
+                    🎯
+                </div>
+
+                <h3>
+                    Your quiz will appear here
+                </h3>
+
+                <p>
+                    Enter a topic and generate your quiz.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    
+
+    
+
+
+</main>
+
+
+<script src="script.js"></script>
+
+
+</body>
+
+</html>
