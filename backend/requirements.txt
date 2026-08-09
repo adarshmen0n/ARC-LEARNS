@@ -6,18 +6,14 @@ python-dotenv
 pypdf
 python-docx
 
-numpy
-scipy
-scikit-learn
-faiss-cpu
-
-sentence-transformers
-torch
-transformers
-
 openai
 google-generativeai
 
 langchain
 langchain-core
 langchain-text-splitters
+
+orjson
+requests
+httpx
+pydantic
