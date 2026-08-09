@@ -90,5 +90,5 @@ urllib3==2.7.0
 uuid_utils==0.17.0
 uvicorn==0.52.1
 websockets==17.0.1
-xxhash==0.8.2
+xxhash==3.8.1
 zstandard==0.25.0
