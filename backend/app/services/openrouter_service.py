@@ -186,11 +186,8 @@ def call_llm_stream_with_fallback(
             logger.warning("Stream error on %s: %s, falling over...", model, e)
 
     # Fallback to non-streaming response if streaming connections break
-    try:
-        text = call_llm_with_fallback(messages, max_tokens=max_tokens, temperature=temperature)
-        yield text
-    except Exception as e:
-        yield f"AI service temporarily busy. Please retry in a few seconds. ({e})"
+    text = call_llm_with_fallback(messages, max_tokens=max_tokens, temperature=temperature)
+    yield text
 
 
 # ============================================================
