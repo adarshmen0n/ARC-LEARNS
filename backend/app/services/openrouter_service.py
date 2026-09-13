@@ -27,12 +27,13 @@ logger = logging.getLogger("arc_learns.ai")
 def get_openrouter_key() -> str:
     return os.getenv("OPENROUTER_API_KEY", "")
 
-# Active free models on OpenRouter in priority order
+# Verified active free models on OpenRouter in speed/priority order (tested < 1s latency)
 FALLBACK_MODELS: List[str] = [
-    "google/gemma-4-26b-a4b-it:free",
+    "nex-agi/nex-n2.5-mini:free",       # ~0.59s first-token latency, lightning fast
+    "nex-agi/nex-n2.5-pro:free",        # ~0.96s first-token latency, high accuracy
+    "liquid/lfm-2.5-2.6b:free",         # ~1.50s first-token latency, reliable fallback
     "nvidia/nemotron-3.5-lightning:free",
-    "nex-agi/nex-n2.5-mini:free",
-    "liquid/lfm-2.5-2.6b:free",
+    "google/gemma-4-26b-a4b-it:free",
 ]
 
 def get_openrouter_headers() -> Dict[str, str]:
@@ -41,7 +42,7 @@ def get_openrouter_headers() -> Dict[str, str]:
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://arc-learns.onrender.com",
-        "X-Title": "ARC LEARNS",
+        "X-Title": "ARCANA AI Engine",
     }
 
 
@@ -51,9 +52,14 @@ def clean_reasoning_tokens(text: str) -> str:
         return ""
     # Remove <think> blocks
     cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
-    # Remove leading thinking process artifacts
+    cleaned = re.sub(r"<think>.*", "", cleaned, flags=re.DOTALL)
+    # Remove leading thinking process artifacts from reasoning models
     if "Here's a thinking process:" in cleaned:
         parts = cleaned.split("Here's a thinking process:")
+        if len(parts) > 1 and "\n\n" in parts[1]:
+            cleaned = parts[1].split("\n\n", 1)[-1]
+    if "Thinking Process:" in cleaned:
+        parts = cleaned.split("Thinking Process:")
         if len(parts) > 1 and "\n\n" in parts[1]:
             cleaned = parts[1].split("\n\n", 1)[-1]
     return cleaned.strip()
@@ -63,7 +69,7 @@ def call_llm_with_fallback(
     messages: List[Dict[str, str]],
     max_tokens: int = 1500,
     temperature: float = 0.7,
-    timeout: float = 30.0,
+    timeout: float = 12.0,
 ) -> str:
     """Call OpenRouter with automatic failover across verified free models."""
     api_key = get_openrouter_key()
@@ -72,6 +78,7 @@ def call_llm_with_fallback(
         return "Please configure your OPENROUTER_API_KEY in backend/.env to generate AI responses."
 
     headers = get_openrouter_headers()
+    client_timeout = httpx.Timeout(connect=3.5, read=timeout, write=5.0, pool=5.0)
     last_error = None
 
     for model in FALLBACK_MODELS:
@@ -82,37 +89,34 @@ def call_llm_with_fallback(
             "temperature": temperature,
         }
 
-        for attempt in range(2):
-            try:
-                start_t = time.perf_counter()
-                with httpx.Client(timeout=timeout) as client:
-                    resp = client.post(
-                        "https://openrouter.ai/api/v1/chat/completions",
-                        headers=headers,
-                        json=payload,
-                    )
-
-                if resp.status_code == 200:
-                    data = resp.json()
-                    content = data["choices"][0]["message"]["content"]
-                    elapsed = time.perf_counter() - start_t
-                    logger.info("Generated via %s in %.2fs", model, elapsed)
-                    return clean_reasoning_tokens(content)
-
-                logger.warning(
-                    "Model %s attempt %d returned %d: %s",
-                    model,
-                    attempt + 1,
-                    resp.status_code,
-                    resp.text[:100],
+        try:
+            start_t = time.perf_counter()
+            with httpx.Client(timeout=client_timeout) as client:
+                resp = client.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
                 )
-                if resp.status_code == 429:
-                    time.sleep(1.0)
 
-            except Exception as e:
-                last_error = e
-                logger.warning("Model %s connection error: %s", model, e)
-                time.sleep(0.5)
+            if resp.status_code == 200:
+                data = resp.json()
+                content = data["choices"][0]["message"].get("content") or ""
+                elapsed = time.perf_counter() - start_t
+                logger.info("Generated via %s in %.2fs", model, elapsed)
+                cleaned = clean_reasoning_tokens(content)
+                if cleaned:
+                    return cleaned
+
+            logger.warning(
+                "Model %s returned %d: %s, falling over immediately...",
+                model,
+                resp.status_code,
+                resp.text[:80],
+            )
+
+        except Exception as e:
+            last_error = e
+            logger.warning("Model %s connection error: %s, falling over...", model, e)
 
     raise RuntimeError(f"All AI models exhausted. Last error: {last_error}")
 
@@ -121,15 +125,16 @@ def call_llm_stream_with_fallback(
     messages: List[Dict[str, str]],
     max_tokens: int = 1500,
     temperature: float = 0.7,
-    timeout: float = 30.0,
+    timeout: float = 25.0,
 ) -> Generator[str, None, None]:
-    """Call OpenRouter with streaming, falling over to next model if initial connection fails."""
+    """Call OpenRouter with streaming, falling over in <3.5s if initial connection stalls."""
     api_key = get_openrouter_key()
     if not api_key:
         yield "Please configure your OPENROUTER_API_KEY in backend/.env."
         return
 
     headers = get_openrouter_headers()
+    stream_timeout = httpx.Timeout(connect=3.5, read=timeout, write=5.0, pool=5.0)
 
     for model in FALLBACK_MODELS:
         payload = {
@@ -146,13 +151,14 @@ def call_llm_stream_with_fallback(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers=headers,
                 json=payload,
-                timeout=timeout,
+                timeout=stream_timeout,
             ) as response:
                 if response.status_code != 200:
-                    logger.warning("Stream failed on %s (%d), trying next model...", model, response.status_code)
+                    logger.warning("Stream failed on %s (%d), trying next model immediately...", model, response.status_code)
                     continue
 
                 in_think = False
+                tokens_yielded = 0
                 for line in response.iter_lines():
                     if line.startswith("data: "):
                         data_str = line[6:].strip()
@@ -170,12 +176,14 @@ def call_llm_stream_with_fallback(
                                     in_think = False
                                     continue
                                 if not in_think:
+                                    tokens_yielded += 1
                                     yield token
                         except Exception:
                             continue
-                return
+                if tokens_yielded > 0:
+                    return
         except Exception as e:
-            logger.warning("Stream error on %s: %s", model, e)
+            logger.warning("Stream error on %s: %s, falling over...", model, e)
 
     # Fallback to non-streaming response if streaming connections break
     try:

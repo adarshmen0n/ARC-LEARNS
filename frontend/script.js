@@ -79,6 +79,22 @@ let isChatting = false;
 let isGeneratingQuiz = false;
 
 
+
+// ============================================================
+// STUDIO TAB SWITCHING
+// ============================================================
+
+function switchStudioTab(tabId, button) {
+    const tabs = document.querySelectorAll(".studio-tab-panel");
+    tabs.forEach(t => t.classList.remove("active-tab"));
+    const target = document.getElementById(tabId);
+    if (target) target.classList.add("active-tab");
+
+    const tabBtns = document.querySelectorAll(".studio-tab-btn");
+    tabBtns.forEach(b => b.classList.remove("active"));
+    if (button) button.classList.add("active");
+}
+
 // ============================================================
 // SECTION NAVIGATION
 // ============================================================
@@ -183,19 +199,13 @@ function updatePageTitle(sectionId) {
 
 
     const titles = {
-
-        dashboard: "Learning Dashboard",
-
-        learn: "AI Teacher",
-
-        chat: "Ask ARC AI",
-
-        quiz: "AI Quiz",
-
-        progress: "Your Progress",
-
-        arc0: "ARC 0"
-
+        landing: "ARCANA AI System",
+        studio: "Integrated Studio Workspace",
+        learn: "Interactive AI Teacher",
+        chat: "Ask Your Study Material",
+        arc0: "ARC Zero — Universal Intelligence",
+        quiz: "Turbo Assessment Quiz",
+        dashboard: "ARCANA Learning Dashboard"
     };
 
 
@@ -262,17 +272,7 @@ function isSupportedFile(file) {
     }
 
 
-    const allowedExtensions = [
-
-        "pdf",
-
-        "docx",
-
-        "txt",
-
-        "csv"
-
-    ];
+    const allowedExtensions = ["pdf", "docx", "pptx", "txt", "csv"];
 
 
     const extension =
@@ -609,6 +609,7 @@ async function teachTopic() {
 
     const topic =
         topicInput.value.trim();
+    const outputDirect = document.getElementById("lessonOutputDirect");
 
 
     if (!topic) {
@@ -777,24 +778,17 @@ async function teachTopic() {
             // Update lesson immediately
             // =================================================
 
-            output.innerHTML =
-
+            const renderedHtml =
                 '<div class="lesson-content">' +
-
-                '<h2>' +
-                escapeHTML(topic) +
-                '</h2>' +
-
-                formatText(
-                    lessonText
-                ) +
-
+                '<h2>' + escapeHTML(topic) + '</h2>' +
+                formatText(lessonText) +
                 '</div>';
-
-
-            // Keep latest content visible
-            output.scrollTop =
-                output.scrollHeight;
+            output.innerHTML = renderedHtml;
+            output.scrollTop = output.scrollHeight;
+            if (outputDirect) {
+                outputDirect.innerHTML = renderedHtml;
+                outputDirect.scrollTop = outputDirect.scrollHeight;
+            }
 
         }
 
@@ -1321,6 +1315,7 @@ async function generateQuiz() {
 
     const topic =
         topicInput.value.trim();
+    const outputDirect = document.getElementById("lessonOutputDirect");
 
 
     if (!topic) {
@@ -2529,9 +2524,8 @@ document.addEventListener(
 
     function() {
 
-        updatePageTitle(
-            "dashboard"
-        );
+        updatePageTitle("landing");
+        showSection("landing");
         
 
         loadProgress();
@@ -2904,4 +2898,55 @@ async function sendARC0FromUI() {
     messages.scrollTop =
         messages.scrollHeight;
 
+}
+// ============================================================
+// DIRECT SECTION BRIDGES
+// ============================================================
+
+function teachTopicDirect() {
+    const dTopic = document.getElementById("teachTopicDirect");
+    const sTopic = document.getElementById("teachTopic");
+    const dLen = document.getElementById("teachLengthDirect");
+    const sLen = document.getElementById("teachLength");
+    if (dTopic && sTopic) sTopic.value = dTopic.value;
+    if (dLen && sLen) sLen.value = dLen.value;
+    teachTopic(true);
+}
+
+function sendChatDirect() {
+    const dInput = document.getElementById("chatQuestionDirect");
+    const sInput = document.getElementById("chatQuestion");
+    if (dInput && sInput) sInput.value = dInput.value;
+    sendChat(true);
+}
+
+function handleChatKeyDirect(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendChatDirect();
+    }
+}
+
+function sendARC0Direct() {
+    const dInput = document.getElementById("arc0QuestionDirect");
+    const sInput = document.getElementById("arc0Question");
+    if (dInput && sInput) sInput.value = dInput.value;
+    sendARC0FromUI(true);
+}
+
+function handleARC0KeyDirect(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendARC0Direct();
+    }
+}
+
+function generateQuizDirect() {
+    const dTopic = document.getElementById("quizTopicDirect");
+    const sTopic = document.getElementById("quizTopic");
+    const dCount = document.getElementById("quizCountDirect");
+    const sCount = document.getElementById("quizQuestionCount");
+    if (dTopic && sTopic) sTopic.value = dTopic.value;
+    if (dCount && sCount) sCount.value = dCount.value;
+    generateQuiz(true);
 }

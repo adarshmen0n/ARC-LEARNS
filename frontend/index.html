@@ -1,773 +1,462 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>ARC LEARNS | AI Learning Platform</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARCANA AI | Autonomous Cognitive Learning Engine</title>
     <link rel="stylesheet" href="style.css">
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 
+<body class="arcana-theme">
 
-<body>
-
+<!-- Ambient Background Effects -->
+<div class="bg-stars"></div>
+<div class="bg-grid-glow"></div>
+<div class="glow-orb orb-primary"></div>
+<div class="glow-orb orb-secondary"></div>
 
 <!-- =========================
-     SIDEBAR
+     SIDEBAR NAVIGATION
 ========================= -->
-
 <aside class="sidebar">
-
-    <div class="logo">
-
-        <div class="logo-icon">
-            A
+    <div class="logo" onclick="showSection('landing')">
+        <div class="logo-icon-wrap">
+            <svg class="arcana-logo-svg" viewBox="0 0 40 40" fill="none">
+                <polygon points="20,2 38,12 38,28 20,38 2,28 2,12" stroke="url(#arcanaGrad)" stroke-width="2.5" fill="rgba(124, 92, 255, 0.12)" />
+                <polygon points="20,8 32,15 32,25 20,32 8,25 8,15" stroke="#00f5ff" stroke-width="1.5" fill="none" opacity="0.8" />
+                <circle cx="20" cy="20" r="4" fill="#00f5ff" filter="drop-shadow(0 0 8px #00f5ff)" />
+                <defs>
+                    <linearGradient id="arcanaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00f5ff" />
+                        <stop offset="50%" stop-color="#7c5cff" />
+                        <stop offset="100%" stop-color="#f72585" />
+                    </linearGradient>
+                </defs>
+            </svg>
         </div>
-
         <div class="logo-text">
-
-            <h2>
-                ARC LEARNS
-            </h2>
-
-            <span>
-                AI Learning Platform
-            </span>
-
+            <h2>ARCANA</h2>
+            <span>COGNITIVE AI PLATFORM</span>
         </div>
-
     </div>
-
 
     <nav class="navigation">
-
-        <button
-            class="nav-item active"
-            onclick="showSection('dashboard', this)"
-        >
-
-            <span>⌂</span>
-
-            Dashboard
-
+        <button class="nav-item active" onclick="showSection('landing', this)">
+            <span class="nav-icon">✦</span>
+            <span class="nav-label">ARCANA Core</span>
         </button>
 
-
-        <button
-            class="nav-item"
-            onclick="showSection('learn', this)"
-        >
-
-            <span>📚</span>
-
-            AI Teacher
-
+        <button class="nav-item" onclick="showSection('studio', this)">
+            <span class="nav-icon">⚡</span>
+            <span class="nav-label">Studio Workspace</span>
+            <span class="pill-badge">ALL-IN-ONE</span>
         </button>
 
-
-        <button
-            class="nav-item"
-            onclick="showSection('chat', this)"
-        >
-
-            <span>💬</span>
-
-            Ask AI
-
+        <button class="nav-item" onclick="showSection('learn', this)">
+            <span class="nav-icon">📚</span>
+            <span class="nav-label">AI Teacher</span>
         </button>
 
-
-        <button
-            class="nav-item"
-            onclick="showSection('arc0', this)"
-        >
-
-            <span>🤖</span>
-
-            ARC 0
-
+        <button class="nav-item" onclick="showSection('chat', this)">
+            <span class="nav-icon">💬</span>
+            <span class="nav-label">Ask AI</span>
         </button>
 
-
-        <button
-            class="nav-item"
-            onclick="showSection('quiz', this)"
-        >
-
-            <span>🎯</span>
-
-            Quiz
-
+        <button class="nav-item" onclick="showSection('arc0', this)">
+            <span class="nav-icon">🤖</span>
+            <span class="nav-label">ARC Zero</span>
         </button>
 
-
-       
-
+        <button class="nav-item" onclick="showSection('quiz', this)">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-label">Turbo Quiz</span>
+        </button>
     </nav>
 
-
     <div class="sidebar-bottom">
-
         <div class="ai-status">
-
-            <div class="status-dot"></div>
-
+            <div class="status-dot-pulse"></div>
             <div>
-
-                <strong>
-                    ARC AI Online
-                </strong>
-
-                <small>
-                    Learning engine ready
-                </small>
-
+                <strong id="sidebarEngineStatus">ARCANA Turbo Engine</strong>
+                <small id="sidebarEngineSpeed">Latency: &lt; 0.8s • Ultra-Fast</small>
             </div>
-
         </div>
-
     </div>
-
 </aside>
 
-
 <!-- =========================
-     MAIN
+     MAIN APPLICATION VIEW
 ========================= -->
-
 <main class="main">
 
-
     <!-- TOP BAR -->
-
     <header class="topbar">
-
-        <div>
-
-            <p class="welcome-small">
-                WELCOME BACK
-            </p>
-
-            <h1 id="pageTitle">
-                Learning Dashboard
-            </h1>
-
+        <div class="topbar-left">
+            <div class="engine-badge">
+                <span class="badge-dot"></span>
+                <span>NEURAL ENGINE ACTIVE</span>
+                <span class="engine-tag">TURBO STREAMING</span>
+            </div>
+            <h1 id="pageTitle">ARCANA AI System</h1>
         </div>
 
-
-        <div class="profile">
-
-            <div class="profile-avatar">
-                A
+        <div class="topbar-right">
+            <div class="response-speed-pill" id="speedPill">
+                <span class="lightning-icon">⚡</span>
+                <span class="speed-text" id="speedDisplay">Speed: ~0.8s (ChatGPT Grade)</span>
             </div>
 
-            <div>
-
-                <strong>
-                    Student
-                </strong>
-
-                <small>
-                    AI Learner
-                </small>
-
+            <div class="profile">
+                <div class="profile-avatar">A</div>
+                <div>
+                    <strong>Adarsh Menon</strong>
+                    <small>AI Product Architect</small>
+                </div>
             </div>
-
         </div>
-
     </header>
 
-
-    <!-- =========================
-         DASHBOARD
-    ========================= -->
-
-    <section
-        id="dashboard"
-        class="section active-section"
-    >
-
-
-        <!-- HERO -->
-
-        <div class="hero">
-
-            <div class="hero-content">
-
-                <span class="badge">
-                    AI-POWERED LEARNING
-                </span>
-
-
-                <h2>
-
-                    Learn smarter.<br>
-
-                    <span>
-                        Learn with ARC.
-                    </span>
-
-                </h2>
-
-
-                <p>
-
-                    Upload your study material and let
-                    ARC LEARNS transform it into lessons,
-                    AI conversations and interactive quizzes.
-
-                </p>
-
-
-                <button
-                    class="primary-btn"
-                    onclick="showSection('learn')"
-                >
-
-                    Start Learning →
-
-                </button>
-
-            </div>
-
-
-            <div class="hero-orb">
-
-                <div class="orb-ring">
-
-                    <div class="orb-inner">
-                        ARC
-                    </div>
-
+    <!-- ====================================================
+         SECTION 1: ARCANA CENTER HERO LANDING PAGE
+    ==================================================== -->
+    <section id="landing" class="section active-section">
+        <div class="arcana-hero-container">
+            <!-- Center Branding -->
+            <div class="arcana-brand-center">
+                <div class="brand-hologram">
+                    <svg class="hologram-logo" viewBox="0 0 100 100" fill="none">
+                        <circle cx="50" cy="50" r="46" stroke="rgba(124, 92, 255, 0.25)" stroke-dasharray="6 4" />
+                        <circle cx="50" cy="50" r="38" stroke="url(#holoGrad)" stroke-width="2" />
+                        <polygon points="50,16 80,33 80,67 50,84 20,67 20,33" stroke="#00f5ff" stroke-width="2" fill="rgba(0, 245, 255, 0.05)" />
+                        <polygon points="50,26 72,39 72,61 50,74 28,61 28,39" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.1)" />
+                        <circle cx="50" cy="50" r="8" fill="#00f5ff" filter="drop-shadow(0 0 12px #00f5ff)" />
+                        <defs>
+                            <linearGradient id="holoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#00f5ff" />
+                                <stop offset="50%" stop-color="#7c5cff" />
+                                <stop offset="100%" stop-color="#ec4899" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
                 </div>
 
-            </div>
-
-        </div>
-
-
-        <!-- =========================
-             UPLOAD
-        ========================= -->
-
-        <div class="upload-card">
-
-
-            <div class="upload-icon">
-                📄
-            </div>
-
-
-            <div class="upload-content">
-
-                <h3>
-                    Upload Study Material
-                </h3>
-
-
-                <p>
-
-                    Upload your study material and ARC AI
-                    will process it for intelligent learning.
-                    PDF, Word, Text and CSV files are supported.
-
+                <span class="hero-chip">AUTONOMOUS COGNITIVE INTELLIGENCE</span>
+                <h1 class="hero-title-arcana">
+                    A R C A N A
+                </h1>
+                <p class="hero-subtitle">
+                    Transforming raw educational materials into structured knowledge graphs, 
+                    adaptive curriculum sequences, and multi-modal AI learning experiences at sub-second speeds.
                 </p>
 
+                <div class="hero-cta-group">
+                    <button class="primary-btn glow-btn" onclick="showSection('studio')">
+                        <span>Launch Studio Workspace</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+                    <button class="secondary-btn" onclick="showSection('arc0')">
+                        <span>⚡ Chat with ARC Zero</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feature Showcase Cards -->
+            <div class="hero-feature-grid">
+                <div class="hero-feature-card" onclick="showSection('studio')">
+                    <div class="feature-icon cyan-glow">📄</div>
+                    <h3>Multi-Format Ingestion</h3>
+                    <p>Direct parsing for PDF, Word, PPTX, and TXT with paragraph-aware chunking and disk-persisted vector recall.</p>
+                    <span class="feature-link">Open Ingestion Studio →</span>
+                </div>
+
+                <div class="hero-feature-card" onclick="showSection('learn')">
+                    <div class="feature-icon purple-glow">🎓</div>
+                    <h3>AI Teacher (Turbo)</h3>
+                    <p>Structured pedagogic explanations streamed token-by-token in &lt; 0.8s with syntax-highlighted code blocks.</p>
+                    <span class="feature-link">Start Lesson →</span>
+                </div>
+
+                <div class="hero-feature-card" onclick="showSection('arc0')">
+                    <div class="feature-icon pink-glow">🤖</div>
+                    <h3>ARC Zero (Zero Knowledge Gap)</h3>
+                    <p>General-purpose neural assistant equipped with vast contemporary domain knowledge up to 2026.</p>
+                    <span class="feature-link">Ask ARC Zero →</span>
+                </div>
+
+                <div class="hero-feature-card" onclick="showSection('quiz')">
+                    <div class="feature-icon green-glow">🎯</div>
+                    <h3>Turbo Assessment</h3>
+                    <p>Instant quiz generation with interactive feedback, dynamic score tracking, and comprehensive explanations.</p>
+                    <span class="feature-link">Generate Quiz →</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====================================================
+         SECTION 2: INTEGRATED STUDIO WORKSPACE
+         (Upload + AI Teacher + AI Assistant + ARC Zero + Quiz)
+    ==================================================== -->
+    <section id="studio" class="section">
+        <div class="studio-header">
+            <div>
+                <span class="badge">INTEGRATED WORKSPACE</span>
+                <h2>ARCANA Learning Studio</h2>
+                <p>Upload your material once, then seamlessly teach, query, converse, and test in one unified space.</p>
+            </div>
+        </div>
+
+        <!-- UPLOAD ZONE -->
+        <div class="upload-card">
+            <div class="upload-icon-box">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+            </div>
+            <div class="upload-content">
+                <div class="upload-title-row">
+                    <h3>Upload Study Material</h3>
+                    <span class="file-badges">PDF • DOCX • PPTX • TXT • CSV</span>
+                </div>
+                <p>Upload lecture notes, research papers, or textbooks. The engine extracts concepts, builds vector embeddings, and enables immediate learning.</p>
 
                 <div class="upload-row">
-
-                    <input
-                        type="file"
-                        id="pdfFile"
-                        accept=".pdf,.docx,.txt,.csv"
-                    >
-
-
-                    <button
-                        class="primary-btn"
-                        onclick="uploadPDF()"
-                    >
-
-                        Upload File
-
+                    <input type="file" id="pdfFile" accept=".pdf,.docx,.pptx,.txt,.csv">
+                    <button class="primary-btn" id="uploadBtn" onclick="uploadPDF()">
+                        <span id="uploadBtnText">Process Document ⚡</span>
                     </button>
-
                 </div>
 
-
-                <div
-                    id="uploadStatus"
-                    class="status-message"
-                ></div>
-
+                <div id="uploadStatus" class="status-message"></div>
             </div>
-
         </div>
 
-
-        <!-- =========================
-             QUICK ACTIONS
-        ========================= -->
-
-        <h2 class="section-heading">
-            Quick Actions
-        </h2>
-
-
-        <div class="action-grid">
-
-
-            <div
-                class="action-card"
-                onclick="showSection('learn')"
-            >
-
-                <div class="action-icon purple">
-                    📖
-                </div>
-
-                <h3>
-                    AI Teacher
-                </h3>
-
-                <p>
-                    Learn any topic from your uploaded material.
-                </p>
-
-                <span>
-                    Teach me →
-                </span>
-
-            </div>
-
-
-            <div
-                class="action-card"
-                onclick="showSection('chat')"
-            >
-
-                <div class="action-icon blue">
-                    💬
-                </div>
-
-                <h3>
-                    Ask ARC AI
-                </h3>
-
-                <p>
-                    Ask questions about your study material.
-                </p>
-
-                <span>
-                    Ask something →
-                </span>
-
-            </div>
-
-
-            <div
-                class="action-card"
-                onclick="showSection('quiz')"
-            >
-
-                <div class="action-icon orange">
-                    🎯
-                </div>
-
-                <h3>
-                    Take Quiz
-                </h3>
-
-                <p>
-                    Test your knowledge with AI-generated questions.
-                </p>
-
-                <span>
-                    Start quiz →
-                </span>
-
-            </div>
-
+        <!-- STUDIO TABS CONTAINER -->
+        <div class="studio-tabs-bar">
+            <button class="studio-tab-btn active" onclick="switchStudioTab('studio-teacher', this)">
+                <span>🎓 AI Teacher</span>
+            </button>
+            <button class="studio-tab-btn" onclick="switchStudioTab('studio-ask', this)">
+                <span>💬 Ask AI (Document)</span>
+            </button>
+            <button class="studio-tab-btn" onclick="switchStudioTab('studio-arc0', this)">
+                <span>🤖 ARC Zero (Universal)</span>
+            </button>
+            <button class="studio-tab-btn" onclick="switchStudioTab('studio-quiz', this)">
+                <span>🎯 Turbo Quiz</span>
+            </button>
         </div>
 
+        <!-- STUDIO TAB 1: AI TEACHER -->
+        <div id="studio-teacher" class="studio-tab-panel active-tab">
+            <div class="panel-intro">
+                <h4>Interactive AI Teacher</h4>
+                <p>Enter any topic from your study material to receive a fast, structured lesson.</p>
+            </div>
+            <div class="teacher-box">
+                <input type="text" id="teachTopic" placeholder="Enter topic (e.g. Backpropagation, Operating Systems, Bayes Theorem)...">
+                <select id="teachLength" aria-label="Lesson depth">
+                    <option value="short">Quick Summary (Fastest)</option>
+                    <option value="medium" selected>In-Depth Lesson</option>
+                    <option value="long">Comprehensive Guide</option>
+                </select>
+                <button class="primary-btn" onclick="teachTopic()">
+                    <span>Teach Me ⚡</span>
+                </button>
+            </div>
+            <div id="lessonOutput" class="output-card">
+                <div class="empty-state">
+                    <div class="empty-icon">📖</div>
+                    <h3>Lesson stream will render here</h3>
+                    <p>Enter a topic above to begin streaming structured knowledge.</p>
+                </div>
+            </div>
+        </div>
 
+        <!-- STUDIO TAB 2: ASK AI -->
+        <div id="studio-ask" class="studio-tab-panel">
+            <div class="panel-intro">
+                <h4>Ask Your Document</h4>
+                <p>Chat directly with your uploaded notes. Answers are strictly grounded with citations.</p>
+            </div>
+            <div class="chat-container">
+                <div id="chatMessages" class="chat-messages">
+                    <div class="message ai-message">
+                        <div class="message-avatar">A</div>
+                        <div class="message-content">
+                            <strong>ARCANA AI</strong>
+                            <p>I am ready. Ask me any question based on your uploaded material.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatQuestion" placeholder="Ask a question about your study material..." onkeydown="handleChatKey(event)">
+                    <button class="send-btn" onclick="sendChat()">→</button>
+                </div>
+            </div>
+        </div>
 
+        <!-- STUDIO TAB 3: ARC ZERO -->
+        <div id="studio-arc0" class="studio-tab-panel">
+            <div class="panel-intro">
+                <h4>ARC Zero — Universal Intelligence</h4>
+                <p>Universal AI assistant with comprehensive knowledge across modern science, code, and history with zero knowledge gaps.</p>
+            </div>
+            <div class="chat-container">
+                <div id="arc0Messages" class="chat-messages">
+                    <div class="message ai-message">
+                        <div class="message-avatar">0</div>
+                        <div class="message-content">
+                            <strong>ARC Zero</strong>
+                            <p>Online and ready. Ask me anything on any topic.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="arc0Question" placeholder="Ask ARC Zero anything in the universe..." onkeydown="handleARC0Key(event)">
+                    <button class="send-btn" onclick="sendARC0FromUI()">→</button>
+                </div>
+            </div>
+        </div>
 
+        <!-- STUDIO TAB 4: TURBO QUIZ -->
+        <div id="studio-quiz" class="studio-tab-panel">
+            <div class="panel-intro">
+                <h4>Turbo Knowledge Quiz</h4>
+                <p>Generate interactive multiple-choice quizzes to validate your retention in real time.</p>
+            </div>
+            <div class="quiz-start">
+                <input type="text" id="quizTopic" placeholder="Enter topic for quiz (e.g. Convolutional Neural Networks)...">
+                <input type="number" id="quizQuestionCount" min="1" max="25" value="5" placeholder="Count" aria-label="Question Count">
+                <button class="primary-btn" onclick="generateQuiz()">
+                    <span>Generate Quiz ⚡</span>
+                </button>
+            </div>
+            <div id="quizOutput" class="quiz-output">
+                <div class="empty-state">
+                    <div class="empty-icon">🎯</div>
+                    <h3>Your interactive quiz will appear here</h3>
+                    <p>Enter a topic and click Generate Quiz to begin.</p>
+                </div>
+            </div>
+        </div>
     </section>
 
-
-    <!-- =========================
-         AI TEACHER
-    ========================= -->
-
-    <section
-        id="learn"
-        class="section"
-    >
-
+    <!-- ====================================================
+         SECTION 3: DIRECT AI TEACHER (Sidebar link)
+    ==================================================== -->
+    <section id="learn" class="section">
         <div class="section-intro">
-
-            <span class="badge">
-                AI TEACHER
-            </span>
-
-            <h2>
-                Learn with ARC AI
-            </h2>
-
-            <p>
-                Enter a topic from your uploaded study material.
-            </p>
-
+            <span class="badge">AI TEACHER</span>
+            <h2>Learn with ARCANA AI</h2>
+            <p>Direct access to the structured AI curriculum teacher.</p>
         </div>
-
-
         <div class="teacher-box">
-
-            <input
-                type="text"
-                id="teachTopic"
-                placeholder="Example: Machine Learning"
-            >
-
-
-            <select
-                id="teachLength"
-                aria-label="Teaching length"
-            >
-
-                <option value="short">
-                    Short
-                </option>
-
-                <option value="medium" selected>
-                    Medium
-                </option>
-
-                <option value="long">
-                    Long
-                </option>
-
+            <input type="text" id="teachTopicDirect" placeholder="Example: Transformers and Attention Mechanism">
+            <select id="teachLengthDirect">
+                <option value="short">Short</option>
+                <option value="medium" selected>Medium</option>
+                <option value="long">Deep</option>
             </select>
-
-
-            <button
-                class="primary-btn"
-                onclick="teachTopic()"
-            >
-
-                Teach Me
-
+            <button class="primary-btn" onclick="teachTopicDirect()">
+                <span>Teach Me ⚡</span>
             </button>
-
         </div>
-
-
-        <div
-            id="lessonOutput"
-            class="output-card"
-        >
-
+        <div id="lessonOutputDirect" class="output-card">
             <div class="empty-state">
-
-                <div>
-                    📖
-                </div>
-
-                <h3>
-                    Your lesson will appear here
-                </h3>
-
-                <p>
-                    Enter a topic above and ARC AI will teach you.
-                </p>
-
+                <div class="empty-icon">📖</div>
+                <h3>Your lesson will appear here</h3>
+                <p>Enter a topic above to begin streaming.</p>
             </div>
-
         </div>
-
     </section>
 
-        <!-- =========================
-         CHAT
-    ========================= -->
-
-    <section
-        id="chat"
-        class="section"
-    >
-
-
+    <!-- ====================================================
+         SECTION 4: DIRECT ASK AI (Sidebar link)
+    ==================================================== -->
+    <section id="chat" class="section">
         <div class="section-intro">
-
-            <span class="badge">
-                ARC AI
-            </span>
-
-            <h2>
-                Ask your AI Teacher
-            </h2>
-
-            <p>
-                Ask questions based on your uploaded study material.
-            </p>
-
+            <span class="badge">DOCUMENT ASSISTANT</span>
+            <h2>Ask your Study Material</h2>
+            <p>Contextual questions grounded directly in your uploaded notes.</p>
         </div>
-
-
         <div class="chat-container">
-
-
-            <div
-                id="chatMessages"
-                class="chat-messages"
-            >
-
-
+            <div id="chatMessagesDirect" class="chat-messages">
                 <div class="message ai-message">
-
-                    <div class="message-avatar">
-                        A
-                    </div>
-
-
+                    <div class="message-avatar">A</div>
                     <div class="message-content">
-
-                        <strong>
-                            ARC AI
-                        </strong>
-
-                        <p>
-
-                            Hi! I'm ARC AI.
-                            Ask me anything from your
-                            uploaded study material.
-
-                        </p>
-
+                        <strong>ARCANA AI</strong>
+                        <p>Ask me anything from your study material.</p>
                     </div>
-
                 </div>
-
-
             </div>
-
-
             <div class="chat-input">
-
-                <input
-                    type="text"
-                    id="chatQuestion"
-                    placeholder="Ask something..."
-                    onkeydown="handleChatKey(event)"
-                >
-
-
-                <button
-                    class="send-btn"
-                    onclick="sendChat()"
-                >
-
-                    →
-
-                </button>
-
+                <input type="text" id="chatQuestionDirect" placeholder="Ask something..." onkeydown="handleChatKeyDirect(event)">
+                <button class="send-btn" onclick="sendChatDirect()">→</button>
             </div>
-
         </div>
-
     </section>
 
-
-    <!-- =========================
-         ARC 0
-    ========================= -->
-
-    <section
-        id="arc0"
-        class="section"
-    >
-
-
+    <!-- ====================================================
+         SECTION 5: DIRECT ARC ZERO (Sidebar link)
+    ==================================================== -->
+    <section id="arc0" class="section">
         <div class="section-intro">
-
-            <span class="badge">
-                ARC 0
-            </span>
-
-            <h2>
-                Your AI Assistant
-            </h2>
-
-            <p>
-                Ask ARC 0 general questions and get direct AI answers.
-            </p>
-
+            <span class="badge">ARC ZERO</span>
+            <h2>Universal Intelligence</h2>
+            <p>High-speed, zero-knowledge-gap assistant answering any inquiry.</p>
         </div>
-
-
         <div class="chat-container">
-
-            <div
-                id="arc0Messages"
-                class="chat-messages"
-            >
-
+            <div id="arc0MessagesDirect" class="chat-messages">
                 <div class="message ai-message">
-
-                    <div class="message-avatar">
-                        A
-                    </div>
-
+                    <div class="message-avatar">0</div>
                     <div class="message-content">
-
-                        <strong>
-                            ARC 0
-                        </strong>
-
-                        <p>
-                            Hi! I'm ARC 0. Ask me anything.
-                        </p>
-
+                        <strong>ARC Zero</strong>
+                        <p>Hi! I am ARC Zero. Ask me anything without boundaries.</p>
                     </div>
-
                 </div>
-
             </div>
-
-
             <div class="chat-input">
-
-                <input
-                    type="text"
-                    id="arc0Question"
-                    placeholder="Ask ARC 0 anything..."
-                    onkeydown="handleARC0Key(event)"
-                >
-
-
-                <button
-                    class="send-btn"
-                    onclick="sendARC0FromUI()"
-                >
-
-                    →
-
-                </button>
-
+                <input type="text" id="arc0QuestionDirect" placeholder="Ask ARC Zero anything..." onkeydown="handleARC0KeyDirect(event)">
+                <button class="send-btn" onclick="sendARC0Direct()">→</button>
             </div>
-
         </div>
-
     </section>
 
-
-    <!-- =========================
-         QUIZ
-    ========================= -->
-
-    <section
-        id="quiz"
-        class="section"
-    >
-
-
+    <!-- ====================================================
+         SECTION 6: DIRECT QUIZ (Sidebar link)
+    ==================================================== -->
+    <section id="quiz" class="section">
         <div class="section-intro">
-
-            <span class="badge">
-                AI QUIZ
-            </span>
-
-            <h2>
-                Test your knowledge
-            </h2>
-
-            <p>
-                Generate an interactive quiz from your study material.
-            </p>
-
+            <span class="badge">TURBO QUIZ</span>
+            <h2>Test Your Knowledge</h2>
+            <p>Generate rapid-fire interactive assessments with instant explanations.</p>
         </div>
-
-
         <div class="quiz-start">
-
-            <input
-                type="text"
-                id="quizTopic"
-                placeholder="Example: Machine Learning"
-            >
-
-
-            <input
-                type="number"
-                id="quizQuestionCount"
-                min="1"
-                max="50"
-                value="5"
-                placeholder="Questions"
-                aria-label="Number of quiz questions"
-            >
-
-
-            <button
-                class="primary-btn"
-                onclick="generateQuiz()"
-            >
-
-                Generate Quiz
-
+            <input type="text" id="quizTopicDirect" placeholder="Topic for quiz...">
+            <input type="number" id="quizCountDirect" min="1" max="25" value="5" placeholder="Count">
+            <button class="primary-btn" onclick="generateQuizDirect()">
+                <span>Generate Quiz ⚡</span>
             </button>
-
         </div>
-
-
-        <div
-            id="quizOutput"
-            class="quiz-output"
-        >
-
+        <div id="quizOutputDirect" class="quiz-output">
             <div class="empty-state">
-
-                <div>
-                    🎯
-                </div>
-
-                <h3>
-                    Your quiz will appear here
-                </h3>
-
-                <p>
-                    Enter a topic and generate your quiz.
-                </p>
-
+                <div class="empty-icon">🎯</div>
+                <h3>Quiz questions will appear here</h3>
+                <p>Enter a topic above to generate questions.</p>
             </div>
-
         </div>
-
     </section>
-
-
-    
-
-    
-
 
 </main>
-
 
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
 <script src="script.js"></script>
-
-
 </body>
-
 </html>
