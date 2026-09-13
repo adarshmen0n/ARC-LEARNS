@@ -463,6 +463,12 @@
             <h2>Ask your Study Material</h2>
             <p>Contextual doubt resolution grounded directly in your uploaded notes.</p>
         </div>
+        <div class="section-quick-pills">
+            <span class="pills-label">Quick Inquiries:</span>
+            <button class="pill-chip" onclick="quickFillChat('Summarize the most important takeaways from this document.')">📋 Key Takeaways</button>
+            <button class="pill-chip" onclick="quickFillChat('Explain the most complex theorem or formula in simple terms.')">💡 Simplify Concept</button>
+            <button class="pill-chip" onclick="quickFillChat('What are the top 5 high-yield exam questions from these notes?')">🎓 Exam Questions</button>
+        </div>
         <div class="chat-container">
             <div id="chatMessagesDirect" class="chat-messages">
                 <div class="message ai-message">
@@ -488,6 +494,13 @@
             <span class="badge">ARC ZERO</span>
             <h2>Universal Intelligence</h2>
             <p>High-speed, zero-knowledge-gap assistant answering any technical inquiry.</p>
+        </div>
+        <div class="section-quick-pills">
+            <span class="pills-label">Instant Prompts:</span>
+            <button class="pill-chip" onclick="quickFillARC0('Who is the Prime Minister of India and what are their constitutional executive duties?')">🇮🇳 Prime Minister Duties</button>
+            <button class="pill-chip" onclick="quickFillARC0('Explain the difference between Monolithic and Microkernel OS architectures.')">💻 Microkernel vs Monolithic</button>
+            <button class="pill-chip" onclick="quickFillARC0('How does the Transformer Self-Attention mechanism work mathematically?')">🤖 Attention Math</button>
+            <button class="pill-chip" onclick="quickFillARC0('Explain Byzantine Fault Tolerance and Raft Consensus in distributed systems.')">🛡️ Consensus Protocols</button>
         </div>
         <div class="chat-container">
             <div id="arc0MessagesDirect" class="chat-messages">

@@ -1243,11 +1243,22 @@ select {
 }
 
 .quiz-option.wrong,
-.quiz-option-btn.wrong {
+.quiz-option-btn.wrong,
+.quiz-option-btn.incorrect {
     background: rgba(244, 63, 94, 0.2) !important;
     border-color: #f43f5e !important;
     color: #fff !important;
     box-shadow: 0 0 15px rgba(244, 63, 94, 0.2);
+}
+
+.quiz-explanation.exp-correct {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.quiz-explanation.exp-incorrect {
+    background: rgba(244, 63, 94, 0.08);
+    border-color: rgba(244, 63, 94, 0.4);
 }
 
 .quiz-explanation {

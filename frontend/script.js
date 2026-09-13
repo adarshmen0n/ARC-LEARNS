@@ -172,6 +172,12 @@ function showSection(sectionId, button = null) {
 
 
     currentSection = sectionId;
+    setTimeout(() => {
+        if (sectionId === "arc0") document.getElementById("arc0QuestionDirect")?.focus();
+        else if (sectionId === "chat") document.getElementById("chatQuestionDirect")?.focus();
+        else if (sectionId === "learn") document.getElementById("teachTopicDirect")?.focus();
+        else if (sectionId === "quiz") document.getElementById("quizTopicDirect")?.focus();
+    }, 50);
 
     updatePageTitle(sectionId);
 
@@ -597,274 +603,148 @@ async function createAPIError(
 // ============================================================
 
 async function teachTopic() {
+    const topicDirect = document.getElementById("teachTopicDirect");
+    const topicStudio = document.getElementById("teachTopic");
+    const lenDirect = document.getElementById("teachLengthDirect");
+    const lenStudio = document.getElementById("teachLength");
+    const outDirect = document.getElementById("lessonOutputDirect");
+    const outStudio = document.getElementById("lessonOutput");
 
-    const topicInput =
-        document.getElementById("teachTopic");
+    const topic = (
+        (topicDirect && topicDirect.value.trim()) ||
+        (topicStudio && topicStudio.value.trim()) ||
+        ""
+    ).trim();
 
+    const length = (
+        (lenDirect && lenDirect.value) ||
+        (lenStudio && lenStudio.value) ||
+        "medium"
+    );
 
-    const output =
-        document.getElementById("lessonOutput");
+    if (topicDirect) topicDirect.value = topic;
+    if (topicStudio) topicStudio.value = topic;
+    if (lenDirect) lenDirect.value = length;
+    if (lenStudio) lenStudio.value = length;
 
-
-    if (!topicInput || !output) {
-
-        return;
-
-    }
-
-
-    const topic =
-        topicInput.value.trim();
-    const outputDirect = document.getElementById("lessonOutputDirect");
-
+    const outputs = [outDirect, outStudio].filter(Boolean);
 
     if (!topic) {
-
-        output.innerHTML =
-
-            '<div class="empty-state">' +
-
-            '<div>⚠️</div>' +
-
-            '<h3>Please enter a topic</h3>' +
-
-            '<p>' +
-            'Enter a topic from your uploaded study material.' +
-            '</p>' +
-
-            '</div>';
-
+        outputs.forEach(out => {
+            out.innerHTML = `
+                <div class="empty-state">
+                    <div>⚠️</div>
+                    <h3>Please enter a topic</h3>
+                    <p>Enter a topic or select a suggestion above to begin your masterclass.</p>
+                </div>
+            `;
+        });
+        showToast("Please enter a topic to learn", "warning");
         return;
-
     }
 
-
-    if (isTeaching) {
-
-        return;
-
-    }
-
-
+    if (isTeaching) return;
     isTeaching = true;
 
+    outputs.forEach(out => {
+        out.innerHTML = `
+            <div class="empty-state">
+                <div class="status-dot-pulse" style="margin: 0 auto 16px auto; width: 24px; height: 24px;"></div>
+                <h3>Synthesizing 7-Stage Masterclass...</h3>
+                <p>Generating deep pedagogical instruction for <strong>${escapeHTML(topic)}</strong>...</p>
+            </div>
+        `;
+    });
 
-    // ========================================================
-    // Get selected teaching length
-    // ========================================================
+    const clearNotice = withColdStartNotice("AI Teacher");
 
-    const length =
-        getTeachingLength();
-
-
-    // ========================================================
-    // Initial loading message
-    // ========================================================
-
-    output.innerHTML =
-
-        '<div class="lesson-content">' +
-
-        '<h2>' +
-        escapeHTML(topic) +
-        '</h2>' +
-
-        '<p>' +
-        '🧠 ARC AI is starting your lesson...' +
-        '</p>' +
-
-        '</div>';
-
-
-    const clearNotice = withColdStartNotice("Lesson");
     try {
-        const response =
-            await fetch(
-                API_BASE + "/teach/stream",
-
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json"
-
-                    },
-
-                    body: JSON.stringify({
-
-                        topic: topic,
-
-                        length: length
-
-                    })
-
-                }
-
-            );
-
-
-        if (!response.ok) {
-
-            throw await createAPIError(
-
-                response,
-
-                "Unable to generate lesson."
-
-            );
-
-        }
-
-
-        // ====================================================
-        // Make sure streaming is supported
-        // ====================================================
-
-        if (!response.body) {
-
-            throw new Error(
-                "Streaming is not supported by this browser."
-            );
-
-        }
-
-
-        // ====================================================
-        // Prepare reader
-        // ====================================================
-
-        clearNotice();
-        clearNotice();
-        const reader =
-            response.body.getReader();
-
-
-        const decoder =
-            new TextDecoder();
-
-
         let lessonText = "";
+        let streamWorked = false;
 
+        try {
+            const response = await fetch(API_BASE + "/teach/stream", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ topic: topic, length: length })
+            });
 
-        // ====================================================
-        // Read streaming response
-        // ====================================================
-
-        while (true) {
-
-            const {
-                value,
-                done
-            } = await reader.read();
-
-
-            if (done) {
-
-                break;
-
+            if (response.ok && response.body) {
+                clearNotice();
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    lessonText += chunk;
+                    streamWorked = true;
+                    const rendered = `
+                        <div class="lesson-content">
+                            <div class="lesson-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+                                <h2 style="margin: 0;">${escapeHTML(topic)}</h2>
+                                <button class="pill-chip" onclick="copyLessonText(this)">📋 Copy Lesson</button>
+                            </div>
+                            ${formatText(lessonText)}
+                        </div>
+                    `;
+                    outputs.forEach(out => {
+                        out.innerHTML = rendered;
+                        out.scrollTop = out.scrollHeight;
+                    });
+                }
             }
-
-
-            const chunk =
-                decoder.decode(
-                    value,
-                    {
-                        stream: true
-                    }
-                );
-
-
-            lessonText += chunk;
-
-
-            // =================================================
-            // Update lesson immediately
-            // =================================================
-
-            const renderedHtml =
-                '<div class="lesson-content">' +
-                '<h2>' + escapeHTML(topic) + '</h2>' +
-                formatText(lessonText) +
-                '</div>';
-            output.innerHTML = renderedHtml;
-            output.scrollTop = output.scrollHeight;
-            if (outputDirect) {
-                outputDirect.innerHTML = renderedHtml;
-                outputDirect.scrollTop = outputDirect.scrollHeight;
-            }
-
+        } catch (streamErr) {
+            console.warn("Teach Stream error, falling back to sync endpoint:", streamErr);
         }
 
-
-        // ====================================================
-        // Final rendering
-        // ====================================================
-
-        if (!lessonText.trim()) {
-
-            throw new Error(
-                "ARC AI returned an empty lesson."
-            );
-
+        if (!streamWorked || !lessonText.trim()) {
+            const syncRes = await fetch(API_BASE + "/teach", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ topic: topic, length: length })
+            });
+            clearNotice();
+            if (!syncRes.ok) throw await createAPIError(syncRes, "Unable to generate lesson.");
+            const syncData = await syncRes.json();
+            lessonText = syncData.lesson || syncData.content || "";
         }
 
+        if (!lessonText.trim()) throw new Error("ARC AI returned an empty lesson.");
 
-        output.innerHTML =
+        const finalRendered = `
+            <div class="lesson-content">
+                <div class="lesson-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
+                    <h2 style="margin: 0;">${escapeHTML(topic)}</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="pill-chip" onclick="copyLessonText(this)">📋 Copy Lesson</button>
+                        <button class="pill-chip" onclick="quickFillQuiz('${escapeHTML(topic).replace(/'/g, "\\'")}')">🎯 Test Myself with Quiz</button>
+                    </div>
+                </div>
+                ${formatText(lessonText)}
+            </div>
+        `;
+        outputs.forEach(out => {
+            out.innerHTML = finalRendered;
+            out.scrollTop = out.scrollHeight;
+        });
 
-            '<div class="lesson-content">' +
-
-            '<h2>' +
-            escapeHTML(topic) +
-            '</h2>' +
-
-            formatText(
-                lessonText
-            ) +
-
-            '</div>';
-
-
-        topicsLearned++;
-
-
-        updateProgress();
-
-
-    } catch (error) {
+    } catch (err) {
         clearNotice();
-        console.error(
-            "TEACH STREAM ERROR:",
-            error
-        );
-
-
-        output.innerHTML =
-
-            '<div class="empty-state">' +
-
-            '<div>⚠️</div>' +
-
-            '<h3>Unable to generate lesson</h3>' +
-
-            '<p>' +
-            escapeHTML(
-                error.message ||
-                "Something went wrong."
-            ) +
-            '</p>' +
-
-            '</div>';
-
-
+        console.error("Teach Error:", err);
+        outputs.forEach(out => {
+            out.innerHTML = `
+                <div class="empty-state">
+                    <div>⚠️</div>
+                    <h3>Unable to generate lesson</h3>
+                    <p>${escapeHTML(err.message || "Failed to reach AI teacher.")}</p>
+                </div>
+            `;
+        });
+        showToast(err.message || "Teacher error", "error");
     } finally {
-
         isTeaching = false;
-
     }
-
 }
 
 // ============================================================
@@ -872,281 +752,135 @@ async function teachTopic() {
 // ============================================================
 
 async function sendChat() {
+    const inputDirect = document.getElementById("chatQuestionDirect");
+    const inputStudio = document.getElementById("chatQuestion");
+    const msgDirect = document.getElementById("chatMessagesDirect");
+    const msgStudio = document.getElementById("chatMessages");
 
-    const input =
-        document.getElementById(
-            "chatQuestion"
-        );
+    const question = (
+        (inputDirect && inputDirect.value.trim()) ||
+        (inputStudio && inputStudio.value.trim()) ||
+        ""
+    ).trim();
 
+    if (!question) return;
+    if (isChatting) return;
 
-    const messages =
-        document.getElementById(
-            "chatMessages"
-        );
+    if (inputDirect) inputDirect.value = "";
+    if (inputStudio) inputStudio.value = "";
 
+    const containers = [msgDirect, msgStudio].filter(Boolean);
+    containers.forEach(container => {
+        const userDiv = document.createElement("div");
+        userDiv.className = "message user-message";
+        userDiv.innerHTML = `
+            <div class="message-content">
+                <strong>You</strong>
+                <p>${escapeHTML(question)}</p>
+            </div>
+        `;
+        container.appendChild(userDiv);
+        container.scrollTop = container.scrollHeight;
+    });
 
-    if (!input || !messages) {
-
-        return;
-
-    }
-
-
-    const question =
-        input.value.trim();
-
-
-    if (!question) {
-
-        return;
-
-    }
-
-
-    if (isChatting) {
-
-        return;
-
-    }
-
-
-    // ========================================================
-    // Add user's message
-    // ========================================================
-
-    addChatMessage(
-        "user",
-        escapeHTML(question)
-    );
-
-
-    input.value = "";
-
-
-    // ========================================================
-    // Add temporary AI message
-    // ========================================================
-
-    const loadingId =
-        addChatMessage(
-            "ai",
-            "ARC AI is starting..."
-        );
-
+    const aiBubbles = [];
+    containers.forEach(container => {
+        const aiDiv = document.createElement("div");
+        aiDiv.className = "message ai-message";
+        aiDiv.innerHTML = `
+            <div class="message-avatar">A</div>
+            <div class="message-content">
+                <strong>ARC LEARN Tutor</strong>
+                <p class="streaming-text"><span class="loading-pulse">Consulting study material...</span></p>
+            </div>
+        `;
+        container.appendChild(aiDiv);
+        container.scrollTop = container.scrollHeight;
+        aiBubbles.push(aiDiv);
+    });
 
     isChatting = true;
-
-
     const clearNotice = withColdStartNotice("Chat");
+
     try {
-        const response =
-            await fetch(
-                API_BASE + "/chat/stream",
-
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json"
-
-                    },
-
-                    body: JSON.stringify({
-                        question: question,
-                        history: chatHistory.slice(-6)
-                    })
-
-                }
-
-            );
-
-
-        if (!response.ok) {
-
-            throw await createAPIError(
-                response,
-                "Unable to get an answer."
-            );
-
-        }
-
-
-        // ====================================================
-        // Make sure streaming is available
-        // ====================================================
-
-        if (!response.body) {
-
-            throw new Error(
-                "Streaming is not supported by this browser."
-            );
-
-        }
-
-
-        // ====================================================
-        // Get response reader
-        // ====================================================
-
-        clearNotice();
-        clearNotice();
-        const reader =
-            response.body.getReader();
-
-
-        const decoder =
-            new TextDecoder();
-
-
         let answer = "";
+        let streamWorked = false;
 
+        try {
+            const response = await fetch(API_BASE + "/chat/stream", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: question,
+                    history: chatHistory.slice(-6)
+                })
+            });
 
-        // ====================================================
-        // Read chunks as they arrive
-        // ====================================================
-
-        while (true) {
-
-            const {
-                value,
-                done
-            } = await reader.read();
-
-
-            if (done) {
-
-                break;
-
-            }
-
-
-            const chunk =
-                decoder.decode(
-                    value,
-                    {
-                        stream: true
-                    }
-                );
-
-
-            answer += chunk;
-
-
-            // =================================================
-            // Update the existing AI message
-            // =================================================
-
-            const messageElement =
-                document.getElementById(
-                    loadingId
-                );
-
-
-            if (messageElement) {
-
-                const contentElement =
-                    messageElement.querySelector(
-                        ".message-content"
-                    );
-
-
-                if (contentElement) {
-
-                    contentElement.innerHTML =
-                        formatText(answer);
-
+            if (response.ok && response.body) {
+                clearNotice();
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    answer += chunk;
+                    streamWorked = true;
+                    aiBubbles.forEach(aiDiv => {
+                        const contentEl = aiDiv.querySelector(".message-content");
+                        if (contentEl) {
+                            contentEl.innerHTML = `<strong>ARC LEARN Tutor</strong>${formatText(answer)}`;
+                        }
+                    });
+                    containers.forEach(c => c.scrollTop = c.scrollHeight);
                 }
-
             }
-
-
-            // Keep latest answer visible
-            messages.scrollTop =
-                messages.scrollHeight;
-
+        } catch (streamErr) {
+            console.warn("Chat Stream error, falling back to sync endpoint:", streamErr);
         }
 
-
-        // ====================================================
-        // Final answer
-        // ====================================================
-
-        if (!answer.trim()) {
-
-            throw new Error(
-                "No answer was returned."
-            );
-
+        if (!streamWorked || !answer.trim()) {
+            const syncRes = await fetch(API_BASE + "/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: question,
+                    history: chatHistory.slice(-6)
+                })
+            });
+            clearNotice();
+            if (!syncRes.ok) throw await createAPIError(syncRes, "Unable to get an answer.");
+            const syncData = await syncRes.json();
+            answer = syncData.answer || syncData.response || "";
         }
 
+        if (!answer.trim()) throw new Error("ARC LEARN returned an empty response.");
 
-        const finalMessage =
-            document.getElementById(
-                loadingId
-            );
-
-
-        if (finalMessage) {
-
-            const contentElement =
-                finalMessage.querySelector(
-                    ".message-content"
-                );
-
-
-            if (contentElement) {
-
-                contentElement.innerHTML =
-                    formatText(answer);
-
+        aiBubbles.forEach(aiDiv => {
+            const contentEl = aiDiv.querySelector(".message-content");
+            if (contentEl) {
+                contentEl.innerHTML = `<strong>ARC LEARN Tutor</strong>${formatText(answer)}`;
             }
-
-        }
+        });
+        containers.forEach(c => c.scrollTop = c.scrollHeight);
 
         chatHistory.push({ role: "user", content: question });
         chatHistory.push({ role: "assistant", content: answer });
 
-
-    } catch (error) {
+    } catch (err) {
         clearNotice();
-        console.error(
-            "CHAT STREAM ERROR:",
-            error
-        );
-
-
-        removeChatMessage(
-            loadingId
-        );
-
-
-        addChatMessage(
-
-            "ai",
-
-            "Sorry, ARC AI could not answer your question." +
-
-            "<br><br>" +
-
-            escapeHTML(
-                error.message ||
-                "Something went wrong."
-            )
-
-        );
-
-
+        console.error("Chat Error:", err);
+        aiBubbles.forEach(aiDiv => {
+            const contentEl = aiDiv.querySelector(".message-content");
+            if (contentEl) {
+                contentEl.innerHTML = `<strong>ARC LEARN Tutor</strong><p class="error-msg">⚠️ ${escapeHTML(err.message || "Failed to reach AI service.")}</p>`;
+            }
+        });
+        showToast(err.message || "Chat error", "error");
     } finally {
-
         isChatting = false;
-
     }
-
 }
-
 
 // ============================================================
 // ADD CHAT MESSAGE
@@ -1301,195 +1035,103 @@ function handleChatKey(event) {
 // ============================================================
 
 async function generateQuiz() {
+    const topicDirect = document.getElementById("quizTopicDirect");
+    const topicStudio = document.getElementById("quizTopic");
+    const countDirect = document.getElementById("quizCountDirect");
+    const countStudio = document.getElementById("quizQuestionCount");
+    const outDirect = document.getElementById("quizOutputDirect");
+    const outStudio = document.getElementById("quizOutput");
 
-    const topicInput =
-        document.getElementById(
-            "quizTopic"
-        );
+    const topic = (
+        (topicDirect && topicDirect.value.trim()) ||
+        (topicStudio && topicStudio.value.trim()) ||
+        ""
+    ).trim();
 
+    const count = parseInt(
+        (countDirect && countDirect.value) ||
+        (countStudio && countStudio.value) ||
+        "5",
+        10
+    ) || 5;
 
-    const output =
-        document.getElementById(
-            "quizOutput"
-        );
+    if (topicDirect) topicDirect.value = topic;
+    if (topicStudio) topicStudio.value = topic;
+    if (countDirect) countDirect.value = count;
+    if (countStudio) countStudio.value = count;
 
-
-    if (!topicInput || !output) {
-
-        return;
-
-    }
-
-
-    const topic =
-        topicInput.value.trim();
-    const outputDirect = document.getElementById("lessonOutputDirect");
-
+    const outputs = [outDirect, outStudio].filter(Boolean);
 
     if (!topic) {
-
-        output.innerHTML =
-
-            '<div class="empty-state">' +
-
-            '<div>⚠️</div>' +
-
-            '<h3>Please enter a topic</h3>' +
-
-            '<p>' +
-            'Enter a topic from your uploaded study material.' +
-            '</p>' +
-
-            '</div>';
-
+        outputs.forEach(out => {
+            out.innerHTML = `
+                <div class="empty-state">
+                    <div>⚠️</div>
+                    <h3>Please enter a topic</h3>
+                    <p>Enter a topic or pick a suggestion above to generate quiz questions.</p>
+                </div>
+            `;
+        });
+        showToast("Please enter a topic for the quiz", "warning");
         return;
-
     }
 
-
-    if (isGeneratingQuiz) {
-
-        return;
-
-    }
-
-
-    const questionCount =
-        getQuizQuestionCount();
-
-
+    if (isGeneratingQuiz) return;
     isGeneratingQuiz = true;
 
-
-    output.innerHTML =
-
-        '<div class="empty-state">' +
-
-        '<div>🎯</div>' +
-
-        '<h3>Generating your quiz...</h3>' +
-
-        '<p>' +
-
-        "ARC AI is preparing " +
-
-        questionCount +
-
-        " questions." +
-
-        '</p>' +
-
-        '</div>';
-
+    outputs.forEach(out => {
+        out.innerHTML = `
+            <div class="empty-state">
+                <div class="status-dot-pulse" style="margin: 0 auto 16px auto; width: 24px; height: 24px;"></div>
+                <h3>Generating Turbo Quiz...</h3>
+                <p>Formulating ${count} interactive questions with distractor analysis for <strong>${escapeHTML(topic)}</strong>...</p>
+            </div>
+        `;
+    });
 
     const clearNotice = withColdStartNotice("Quiz");
+
     try {
-        const response =
-            await fetch(
-                API_BASE + "/quiz",
-                {
+        const response = await fetch(API_BASE + "/quiz", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                topic: topic,
+                number_of_questions: count
+            })
+        });
+        clearNotice();
 
-                    method: "POST",
+        if (!response.ok) throw await createAPIError(response, "Unable to generate quiz.");
+        const data = await response.json();
 
-                    headers: {
-
-                        "Content-Type":
-                            "application/json"
-
-                    },
-
-                    body: JSON.stringify({
-
-                        topic: topic,
-
-                        number_of_questions:
-                            questionCount
-
-                    })
-
-                }
-            );
-
-
-        if (!response.ok) {
-
-            throw await createAPIError(
-                response,
-                "Unable to generate quiz."
-            );
-
+        if (!data.quiz || !Array.isArray(data.quiz) || data.quiz.length === 0) {
+            throw new Error("No quiz questions were returned.");
         }
 
-
-        clearNotice();
-        clearNotice();
-        const data =
-            await response.json();
-
-        if (
-            !data.quiz ||
-            data.quiz.length === 0
-        ) {
-
-            throw new Error(
-
-                data.message ||
-
-                data.error ||
-
-                "No quiz questions were returned."
-
-            );
-
-        }
-
-
-        currentQuizTotal =
-            data.quiz.length;
-
+        currentQuiz = data.quiz;
         currentQuizAnswered = 0;
-
         currentQuizCorrect = 0;
 
+        renderQuiz(data.quiz);
 
-        renderQuiz(
-            data.quiz
-        );
-
-
-    } catch (error) {
+    } catch (err) {
         clearNotice();
-        console.error(
-            "QUIZ ERROR:",
-            error
-        );
-
-
-        output.innerHTML =
-
-            '<div class="empty-state">' +
-
-            '<div>⚠️</div>' +
-
-            '<h3>Unable to generate quiz</h3>' +
-
-            '<p>' +
-            escapeHTML(
-                error.message
-            ) +
-            '</p>' +
-
-            '</div>';
-
-
+        console.error("Quiz Error:", err);
+        outputs.forEach(out => {
+            out.innerHTML = `
+                <div class="empty-state">
+                    <div>⚠️</div>
+                    <h3>Unable to generate quiz</h3>
+                    <p>${escapeHTML(err.message || "Failed to generate quiz.")}</p>
+                </div>
+            `;
+        });
+        showToast(err.message || "Quiz error", "error");
     } finally {
-
         isGeneratingQuiz = false;
-
     }
-
 }
-
 
 // ============================================================
 // GET QUIZ QUESTION COUNT
@@ -1563,94 +1205,85 @@ function getQuizQuestionCount() {
 // ============================================================
 
 function renderQuiz(quiz) {
+    const outputs = [
+        document.getElementById("quizOutputDirect"),
+        document.getElementById("quizOutput")
+    ].filter(Boolean);
 
-    const output =
-        document.getElementById(
-            "quizOutput"
-        );
+    if (outputs.length === 0) return;
 
+    outputs.forEach(output => {
+        output.innerHTML = "";
+        const quizContainer = document.createElement("div");
+        quizContainer.className = "quiz-container";
 
-    if (!output) {
+        quiz.forEach(function(item, qIdx) {
+            const card = document.createElement("div");
+            card.className = "quiz-card";
 
-        return;
+            const metaRow = document.createElement("div");
+            metaRow.className = "quiz-meta-row";
+            metaRow.innerHTML = `
+                <span class="quiz-number">Q${qIdx + 1}</span>
+                <span class="badge-difficulty ${(item.difficulty || "medium").toLowerCase()}">${(item.difficulty || "medium").toUpperCase()}</span>
+                ${item.concept_tested ? `<span class="badge-concept">${escapeHTML(item.concept_tested)}</span>` : ""}
+            `;
+            card.appendChild(metaRow);
 
-    }
+            const qTitle = document.createElement("h3");
+            qTitle.className = "quiz-question";
+            qTitle.textContent = item.question || "Question";
+            card.appendChild(qTitle);
 
+            const optionsList = document.createElement("div");
+            optionsList.className = "quiz-options";
 
-    output.innerHTML = "";
-    missedConcepts = [];
+            const options = item.options || [];
+            options.forEach(function(optText, optIdx) {
+                const btn = document.createElement("button");
+                btn.className = "quiz-option-btn";
+                btn.innerHTML = `<span class="option-letter">${String.fromCharCode(65 + optIdx)}</span> <span>${escapeHTML(optText)}</span>`;
 
-    const quizContainer = document.createElement("div");
-    quizContainer.className = "quiz-container";
+                btn.onclick = function() {
+                    if (card.dataset.answered === "true") return;
+                    card.dataset.answered = "true";
 
-    quiz.forEach(function(item, questionIndex) {
-        const card = document.createElement("div");
-        card.className = "quiz-card";
+                    const isCorrect = (optText === item.correct_answer) || (item.correct_answer && item.correct_answer.startsWith(String.fromCharCode(65 + optIdx)));
 
-        // Meta Header: Question #, Difficulty, Concept Tag
-        const metaRow = document.createElement("div");
-        metaRow.className = "quiz-meta-row";
+                    const allBtns = optionsList.querySelectorAll(".quiz-option-btn");
+                    allBtns.forEach(b => b.disabled = true);
 
-        const number = document.createElement("span");
-        number.className = "quiz-number";
-        number.textContent = "Q" + (questionIndex + 1);
+                    if (isCorrect) {
+                        btn.classList.add("correct");
+                        currentQuizCorrect++;
+                    } else {
+                        btn.classList.add("incorrect");
+                        allBtns.forEach(b => {
+                            if (b.innerText.includes(item.correct_answer)) {
+                                b.classList.add("correct");
+                            }
+                        });
+                    }
 
-        const diffBadge = document.createElement("span");
-        const diff = (item.difficulty || "medium").toLowerCase();
-        diffBadge.className = "badge-difficulty " + diff;
-        diffBadge.textContent = diff.toUpperCase();
+                    const expDiv = document.createElement("div");
+                    expDiv.className = "quiz-explanation " + (isCorrect ? "exp-correct" : "exp-incorrect");
+                    expDiv.innerHTML = `
+                        <strong>${isCorrect ? "✓ Correct!" : "✕ Incorrect"}</strong>
+                        <p>${escapeHTML(item.explanation || "Correct answer: " + item.correct_answer)}</p>
+                    `;
+                    card.appendChild(expDiv);
+                };
 
-        metaRow.appendChild(number);
-        metaRow.appendChild(diffBadge);
+                optionsList.appendChild(btn);
+            });
 
-        if (item.concept_tested) {
-            const conceptBadge = document.createElement("span");
-            conceptBadge.className = "badge-concept";
-            conceptBadge.textContent = item.concept_tested;
-            metaRow.appendChild(conceptBadge);
-        }
-
-        card.appendChild(metaRow);
-
-        // Question Title
-        const question = document.createElement("h3");
-        question.className = "quiz-question";
-        question.textContent = item.question || "Question";
-        card.appendChild(question);
-
-        // Options
-        const options = Array.isArray(item.options) ? item.options : [];
-        const optionsContainer = document.createElement("div");
-        optionsContainer.className = "quiz-options";
-
-        options.forEach(function(option) {
-            const button = document.createElement("button");
-            button.className = "quiz-option";
-            button.textContent = option;
-
-            button.onclick = function() {
-                handleQuizAnswer(
-                    button,
-                    option,
-                    item,
-                    card
-                );
-            };
-
-            optionsContainer.appendChild(button);
+            card.appendChild(optionsList);
+            quizContainer.appendChild(card);
         });
 
-        card.appendChild(optionsContainer);
-        quizContainer.appendChild(card);
+        output.appendChild(quizContainer);
     });
-
-    output.appendChild(quizContainer);
 }
-
-
-// ============================================================
-// HANDLE QUIZ ANSWER (IMMEDIATE PEDAGOGICAL FEEDBACK)
-// ============================================================
 
 function handleQuizAnswer(
     clickedButton,
@@ -2452,393 +2085,184 @@ function handleARC0Key(event) {
 
 
 async function sendARC0FromUI() {
+    const inputDirect = document.getElementById("arc0QuestionDirect");
+    const inputStudio = document.getElementById("arc0Question");
+    const msgDirect = document.getElementById("arc0MessagesDirect");
+    const msgStudio = document.getElementById("arc0Messages");
 
-    const input =
-        document.getElementById(
-            "arc0Question"
-        );
+    const question = (
+        (inputDirect && inputDirect.value.trim()) ||
+        (inputStudio && inputStudio.value.trim()) ||
+        ""
+    ).trim();
 
+    if (!question) return;
+    if (isARC0Busy) return;
 
-    const messages =
-        document.getElementById(
-            "arc0Messages"
-        );
+    if (inputDirect) inputDirect.value = "";
+    if (inputStudio) inputStudio.value = "";
 
+    const containers = [msgDirect, msgStudio].filter(Boolean);
+    containers.forEach(container => {
+        const userDiv = document.createElement("div");
+        userDiv.className = "message user-message";
+        userDiv.innerHTML = `
+            <div class="message-content">
+                <strong>You</strong>
+                <p>${escapeHTML(question)}</p>
+            </div>
+        `;
+        container.appendChild(userDiv);
+        container.scrollTop = container.scrollHeight;
+    });
 
-    if (!input || !messages) {
+    const aiBubbles = [];
+    containers.forEach(container => {
+        const aiDiv = document.createElement("div");
+        aiDiv.className = "message ai-message";
+        aiDiv.innerHTML = `
+            <div class="message-avatar">0</div>
+            <div class="message-content">
+                <strong>ARC Zero</strong>
+                <p class="streaming-text"><span class="loading-pulse">Thinking...</span></p>
+            </div>
+        `;
+        container.appendChild(aiDiv);
+        container.scrollTop = container.scrollHeight;
+        aiBubbles.push(aiDiv);
+    });
 
-        return;
+    isARC0Busy = true;
+    const clearNotice = withColdStartNotice("ARC Zero");
 
-    }
-
-
-    const question =
-        input.value.trim();
-
-
-    if (!question) {
-
-        return;
-
-    }
-
-
-    // ========================================================
-    // Display user's message
-    // ========================================================
-
-    const userMessage =
-        document.createElement("div");
-
-
-    userMessage.className =
-        "message user-message";
-
-
-    userMessage.innerHTML =
-
-        '<div class="message-content">' +
-
-        '<strong>You</strong>' +
-
-        '<p>' +
-        escapeHTML(question) +
-        '</p>' +
-
-        '</div>';
-
-
-    messages.appendChild(
-        userMessage
-    );
-
-
-    // ========================================================
-    // Clear input
-    // ========================================================
-
-    input.value = "";
-
-
-    messages.scrollTop =
-        messages.scrollHeight;
-
-
-    // ========================================================
-    // Create ARC 0 AI message
-    // ========================================================
-
-    const aiMessage =
-        document.createElement("div");
-
-
-    aiMessage.className =
-        "message ai-message";
-
-
-    aiMessage.innerHTML =
-
-        '<div class="message-avatar">' +
-        'A' +
-        '</div>' +
-
-        '<div class="message-content">' +
-
-        '<strong>ARC 0</strong>' +
-
-        '<p>Thinking...</p>' +
-
-        '</div>';
-
-
-    messages.appendChild(
-        aiMessage
-    );
-
-
-    messages.scrollTop =
-        messages.scrollHeight;
-
-
-    const clearNotice = withColdStartNotice("ARC 0");
     try {
-        const response =
-            await fetch(
-                API_BASE + "/arc0/stream",
-
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json"
-
-                    },
-
-                    body: JSON.stringify({
-                        question: question,
-                        history: arc0History.slice(-6)
-                    })
-
-                }
-
-            );
-
-
-        // ====================================================
-        // Check response
-        // ====================================================
-
-        if (!response.ok) {
-
-            throw await createAPIError(
-
-                response,
-
-                "ARC 0 is currently unavailable."
-
-            );
-
-        }
-
-
-        // ====================================================
-        // Check streaming support
-        // ====================================================
-
-        if (!response.body) {
-
-            throw new Error(
-                "Streaming is not supported by this browser."
-            );
-
-        }
-
-
-        // ====================================================
-        // Prepare stream reader
-        // ====================================================
-
-        clearNotice();
-        clearNotice();
-        const reader =
-            response.body.getReader();
-
-
-        const decoder =
-            new TextDecoder();
-
-
         let answer = "";
+        let streamWorked = false;
 
+        try {
+            const response = await fetch(API_BASE + "/arc0/stream", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: question,
+                    history: arc0History.slice(-6)
+                })
+            });
 
-        // ====================================================
-        // Read response chunks
-        // ====================================================
-
-        while (true) {
-
-            const {
-                value,
-                done
-            } = await reader.read();
-
-
-            if (done) {
-
-                break;
-
+            if (response.ok && response.body) {
+                clearNotice();
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    answer += chunk;
+                    streamWorked = true;
+                    aiBubbles.forEach(aiDiv => {
+                        const contentEl = aiDiv.querySelector(".message-content");
+                        if (contentEl) {
+                            contentEl.innerHTML = `<strong>ARC Zero</strong>${formatText(answer)}`;
+                        }
+                    });
+                    containers.forEach(c => c.scrollTop = c.scrollHeight);
+                }
             }
+        } catch (streamErr) {
+            console.warn("ARC0 Stream error, falling back to sync endpoint:", streamErr);
+        }
 
+        if (!streamWorked || !answer.trim()) {
+            const syncRes = await fetch(API_BASE + "/arc0", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: question,
+                    history: arc0History.slice(-6)
+                })
+            });
+            clearNotice();
+            if (!syncRes.ok) throw await createAPIError(syncRes, "ARC Zero is currently unavailable.");
+            const syncData = await syncRes.json();
+            answer = syncData.answer || syncData.response || "";
+        }
 
-            const chunk =
-                decoder.decode(
+        if (!answer.trim()) throw new Error("ARC Zero returned an empty response.");
 
-                    value,
-
-                    {
-                        stream: true
-                    }
-
-                );
-
-
-            answer += chunk;
-
-
-            // =================================================
-            // Update answer immediately
-            // =================================================
-
-            const contentElement =
-                aiMessage.querySelector(
-                    ".message-content"
-                );
-
-
-            if (contentElement) {
-
-                contentElement.innerHTML =
-
-                    '<strong>ARC 0</strong>' +
-
-                    formatText(
-                        answer
-                    );
-
+        aiBubbles.forEach(aiDiv => {
+            const contentEl = aiDiv.querySelector(".message-content");
+            if (contentEl) {
+                contentEl.innerHTML = `<strong>ARC Zero</strong>${formatText(answer)}`;
             }
-
-
-            // Keep latest text visible
-            messages.scrollTop =
-                messages.scrollHeight;
-
-        }
-
-
-        // ====================================================
-        // Final answer validation
-        // ====================================================
-
-        if (!answer.trim()) {
-
-            throw new Error(
-                "ARC 0 returned an empty answer."
-            );
-
-        }
-
-
-        // ====================================================
-        // Final rendering
-        // ====================================================
-
-        const finalContent =
-            aiMessage.querySelector(
-                ".message-content"
-            );
-
-
-        if (finalContent) {
-
-            finalContent.innerHTML =
-
-                '<strong>ARC 0</strong>' +
-
-                formatText(
-                    answer
-                );
-
-        }
+        });
+        containers.forEach(c => c.scrollTop = c.scrollHeight);
 
         arc0History.push({ role: "user", content: question });
         arc0History.push({ role: "assistant", content: answer });
 
-
-    } catch (error) {
+    } catch (err) {
         clearNotice();
-        console.error(
-            "ARC 0 STREAM ERROR:",
-            error
-        );
-
-
-        aiMessage.innerHTML =
-
-            '<div class="message-avatar">' +
-            'A' +
-            '</div>' +
-
-            '<div class="message-content">' +
-
-            '<strong>ARC 0</strong>' +
-
-            '<p>⚠️ ' +
-
-            escapeHTML(
-
-                error.message ||
-
-                "ARC 0 is currently unavailable."
-
-            ) +
-
-            '</p>' +
-
-            '</div>';
-
+        console.error("ARC0 Error:", err);
+        aiBubbles.forEach(aiDiv => {
+            const contentEl = aiDiv.querySelector(".message-content");
+            if (contentEl) {
+                contentEl.innerHTML = `<strong>ARC Zero</strong><p class="error-msg">⚠️ ${escapeHTML(err.message || "Failed to reach AI service.")}</p>`;
+            }
+        });
+        showToast(err.message || "ARC Zero error", "error");
+    } finally {
+        isARC0Busy = false;
     }
-
-
-    messages.scrollTop =
-        messages.scrollHeight;
-
 }
+
 // ============================================================
-// DIRECT SECTION BRIDGES
+// DIRECT SECTION BRIDGES & QUICK LAUNCHERS
 // ============================================================
 
 function teachTopicDirect() {
-    const dTopic = document.getElementById("teachTopicDirect");
-    const sTopic = document.getElementById("teachTopic");
-    const dLen = document.getElementById("teachLengthDirect");
-    const sLen = document.getElementById("teachLength");
-    if (dTopic && sTopic) sTopic.value = dTopic.value;
-    if (dLen && sLen) sLen.value = dLen.value;
-    teachTopic(true);
+    teachTopic();
 }
 
 function sendChatDirect() {
-    const dInput = document.getElementById("chatQuestionDirect");
-    const sInput = document.getElementById("chatQuestion");
-    if (dInput && sInput) sInput.value = dInput.value;
-    sendChat(true);
+    sendChat();
 }
 
 function handleChatKeyDirect(event) {
     if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
-        sendChatDirect();
+        sendChat();
     }
 }
 
 function sendARC0Direct() {
-    const dInput = document.getElementById("arc0QuestionDirect");
-    const sInput = document.getElementById("arc0Question");
-    if (dInput && sInput) sInput.value = dInput.value;
-    sendARC0FromUI(true);
+    sendARC0FromUI();
 }
 
 function handleARC0KeyDirect(event) {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
-        sendARC0Direct();
+        sendARC0FromUI();
     }
 }
 
 function generateQuizDirect() {
-    const dTopic = document.getElementById("quizTopicDirect");
-    const sTopic = document.getElementById("quizTopic");
-    const dCount = document.getElementById("quizCountDirect");
-    const sCount = document.getElementById("quizQuestionCount");
-    if (dTopic && sTopic) sTopic.value = dTopic.value;
-    if (dCount && sCount) sCount.value = dCount.value;
-    generateQuiz(true);
+    generateQuiz();
 }
 
-// ============================================================
-// QUICK LAUNCH AND TOPIC HELPERS
-// ============================================================
+function quickFillARC0(promptText) {
+    const d = document.getElementById("arc0QuestionDirect");
+    const s = document.getElementById("arc0Question");
+    if (d) d.value = promptText;
+    if (s) s.value = promptText;
+    sendARC0FromUI();
+}
 
-function quickLaunchTopic(topic) {
-    showSection('learn');
-    const dTopic = document.getElementById("teachTopicDirect");
-    const sTopic = document.getElementById("teachTopic");
-    if (dTopic) dTopic.value = topic;
-    if (sTopic) sTopic.value = topic;
-    teachTopicDirect();
+function quickFillChat(promptText) {
+    const d = document.getElementById("chatQuestionDirect");
+    const s = document.getElementById("chatQuestion");
+    if (d) d.value = promptText;
+    if (s) s.value = promptText;
+    sendChat();
 }
 
 function quickFillTeach(topic) {
@@ -2846,7 +2270,7 @@ function quickFillTeach(topic) {
     const sTopic = document.getElementById("teachTopic");
     if (dTopic) dTopic.value = topic;
     if (sTopic) sTopic.value = topic;
-    teachTopicDirect();
+    teachTopic();
 }
 
 function quickFillQuiz(topic) {
@@ -2854,7 +2278,19 @@ function quickFillQuiz(topic) {
     const sTopic = document.getElementById("quizTopic");
     if (dTopic) dTopic.value = topic;
     if (sTopic) sTopic.value = topic;
-    generateQuizDirect();
+    generateQuiz();
+}
+
+function copyLessonText(btn) {
+    const card = btn.closest(".lesson-content");
+    if (!card) return;
+    const text = card.innerText.replace("📋 Copy Lesson", "").trim();
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = "✓ Copied!";
+        setTimeout(() => btn.innerText = orig, 2000);
+        showToast("Lesson copied to clipboard!", "success");
+    });
 }
 
 // ============================================================
