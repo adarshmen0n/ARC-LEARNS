@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List, Optional
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -8,7 +9,7 @@ from app.services.ai_manager import (
     ask_arc0_stream
 )
 
-
+logger = logging.getLogger("arc_learns.arc0")
 router = APIRouter()
 
 
@@ -37,16 +38,19 @@ def arc0_chat(data: ARC0Request):
             "answer": "Please enter a question."
         }
 
+    history_payload = [m.model_dump() for m in data.history] if data.history else None
+
     try:
         answer = ask_arc0(
             question,
             history=history_payload
         )
     except Exception as e:
+        logger.warning("ARC Zero query error: %s", e)
         answer = (
             "**ARC Zero Status Notice:**\n\n"
-            "The configured OpenRouter API key has reached its daily free-tier request limit (HTTP 429). "
-            "Please update `OPENROUTER_API_KEY` in `backend/.env` or add credits to unlock unlimited queries."
+            f"Unable to process query: {e}. "
+            "Please check provider API keys in environment configuration."
         )
 
     return {

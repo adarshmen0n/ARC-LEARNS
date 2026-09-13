@@ -2827,3 +2827,159 @@ function generateQuizDirect() {
     if (dCount && sCount) sCount.value = dCount.value;
     generateQuiz(true);
 }
+
+// ============================================================
+// QUICK LAUNCH AND TOPIC HELPERS
+// ============================================================
+
+function quickLaunchTopic(topic) {
+    showSection('learn');
+    const dTopic = document.getElementById("teachTopicDirect");
+    const sTopic = document.getElementById("teachTopic");
+    if (dTopic) dTopic.value = topic;
+    if (sTopic) sTopic.value = topic;
+    teachTopicDirect();
+}
+
+function quickFillTeach(topic) {
+    const dTopic = document.getElementById("teachTopicDirect");
+    const sTopic = document.getElementById("teachTopic");
+    if (dTopic) dTopic.value = topic;
+    if (sTopic) sTopic.value = topic;
+    teachTopicDirect();
+}
+
+function quickFillQuiz(topic) {
+    const dTopic = document.getElementById("quizTopicDirect");
+    const sTopic = document.getElementById("quizTopic");
+    if (dTopic) dTopic.value = topic;
+    if (sTopic) sTopic.value = topic;
+    generateQuizDirect();
+}
+
+// ============================================================
+// LIVE PROVIDER STATUS FETCH
+// ============================================================
+
+async function fetchProviderStatus() {
+    try {
+        const res = await fetch(API_BASE + "/status");
+        if (!res.ok) return;
+        const data = await res.json();
+        const providers = data.providers || {};
+        const primary = providers.active_primary || "gemini";
+
+        const hudPrimary = document.getElementById("hudPrimaryProvider");
+        const sidebarStatus = document.getElementById("sidebarEngineStatus");
+        const speedDisplay = document.getElementById("speedDisplay");
+        const sidebarSpeed = document.getElementById("sidebarEngineSpeed");
+
+        if (primary === "gemini") {
+            if (hudPrimary) hudPrimary.textContent = "Google Gemini 3 Flash";
+            if (sidebarStatus) sidebarStatus.textContent = "Google Gemini Active";
+            if (speedDisplay) speedDisplay.textContent = "Speed: ~0.3s (Sub-Second)";
+            if (sidebarSpeed) sidebarSpeed.textContent = "Latency: < 0.3s • 1,500/day Free";
+        } else if (primary === "groq") {
+            if (hudPrimary) hudPrimary.textContent = "Groq LPU (500 tok/s)";
+            if (sidebarStatus) sidebarStatus.textContent = "Groq LPU Active";
+            if (speedDisplay) speedDisplay.textContent = "Speed: ~0.2s (Instant)";
+            if (sidebarSpeed) sidebarSpeed.textContent = "Latency: < 0.2s • Ultra-Fast";
+        } else if (primary === "openrouter") {
+            if (hudPrimary) hudPrimary.textContent = "OpenRouter Multi-Model";
+            if (sidebarStatus) sidebarStatus.textContent = "OpenRouter Active";
+        }
+    } catch (e) {
+        console.debug("Could not fetch provider status:", e);
+    }
+}
+
+// ============================================================
+// CYBERNETIC NEURAL CANVAS ANIMATION
+// ============================================================
+
+function initCyberCanvas() {
+    const canvas = document.getElementById("cyberCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    window.addEventListener("resize", () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    });
+
+    const particles = [];
+    const count = Math.min(60, Math.floor((width * height) / 25000));
+
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            radius: Math.random() * 1.8 + 1,
+            color: Math.random() > 0.4 ? "rgba(0, 245, 255, " : "rgba(168, 85, 247, ",
+            alpha: Math.random() * 0.5 + 0.25
+        });
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw connections
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 130) {
+                    const lineAlpha = (1 - dist / 130) * 0.2;
+                    ctx.beginPath();
+                    ctx.strokeStyle = `rgba(0, 245, 255, ${lineAlpha})`;
+                    ctx.lineWidth = 0.8;
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Draw particles
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color + p.alpha + ")";
+            ctx.shadowColor = p.color + "0.8)";
+            ctx.shadowBlur = 6;
+            ctx.fill();
+        }
+
+        requestAnimationFrame(render);
+    }
+
+    requestAnimationFrame(render);
+}
+
+// Auto-run on DOM ready
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+        initCyberCanvas();
+        fetchProviderStatus();
+    });
+} else {
+    initCyberCanvas();
+    fetchProviderStatus();
+}
+

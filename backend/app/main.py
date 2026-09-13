@@ -78,3 +78,13 @@ def home():
         "message": "Welcome to ARC LEARNS",
         "status": "Backend Running Successfully"
     }
+
+
+@app.get("/status")
+def status():
+    from app.services.ai_manager import get_provider_status
+    return {
+        "status": "online",
+        "platform": "ARC LEARN",
+        "providers": get_provider_status()
+    }

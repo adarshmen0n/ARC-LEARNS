@@ -19,8 +19,9 @@ logger = logging.getLogger("arc_learns.groq_service")
 
 # Candidate Groq models in order of priority
 GROQ_MODELS = [
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
+    "openai/gpt-oss-20b",
+    "qwen/qwen3.6-27b",
+    "groq/compound",
 ]
 
 GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"

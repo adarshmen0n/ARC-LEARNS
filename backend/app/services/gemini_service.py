@@ -19,8 +19,9 @@ logger = logging.getLogger("arc_learns.gemini_service")
 
 # Candidate models in order of priority
 GEMINI_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-1.5-flash",
+    "gemini-3-flash-preview",
+    "gemini-flash-lite-latest",
+    "gemini-flash-latest",
 ]
 
 BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
