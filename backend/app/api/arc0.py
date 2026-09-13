@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.services.openrouter_service import (
+from app.services.ai_manager import (
     ask_arc0,
     ask_arc0_stream
 )
