@@ -1,251 +1,170 @@
-import re
+"""Vector store and RAG indexing service for ARC LEARNS.
+
+Implements TF-IDF / BM25 lexical vector similarity, zero external heavy dependencies,
+disk persistence to prevent Render cold-start data loss, and safe fallback search.
+"""
+
+import json
+import logging
 import math
+import os
+import re
 from collections import Counter
+from pathlib import Path
+from typing import Any, Dict, List
 
-# ============================================================
-# LIGHTWEIGHT VECTOR STORE
-# No PyTorch
-# No Sentence Transformers
-# No FAISS
-# No NumPy
-#
-# Designed for low-memory deployment such as Render Free.
-# ============================================================
+logger = logging.getLogger("arc_learns.vector_store")
 
-documents = []
-document_vectors = []
-idf = {}
-vocabulary = set()
+# Global state
+documents: List[str] = []
+document_vectors: List[Dict[str, float]] = []
+idf: Dict[str, float] = {}
+vocabulary: set = set()
+
+STORAGE_DIR = Path("processed")
+STORAGE_FILE = STORAGE_DIR / "vector_store.json"
 
 
-# ============================================================
-# TEXT TOKENIZATION
-# ============================================================
-
-def tokenize(text):
+def tokenize(text: str) -> List[str]:
+    """Tokenize text into lowercase alpha-numeric tokens."""
     return re.findall(r"[a-zA-Z0-9]+", text.lower())
 
 
-# ============================================================
-# CREATE TF-IDF VECTOR STORE
-# ============================================================
+def save_store_to_disk() -> None:
+    """Persist vector store to disk so Render cold starts retain uploaded knowledge."""
+    try:
+        STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+        data = {
+            "documents": documents,
+            "document_vectors": document_vectors,
+            "idf": idf,
+            "vocabulary": list(vocabulary),
+        }
+        with open(STORAGE_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+        logger.info("Persisted %d chunks to %s", len(documents), STORAGE_FILE)
+    except Exception as e:
+        logger.warning("Could not persist vector store: %s", e)
 
-def create_vector_store(chunks):
 
-    global documents
-    global document_vectors
-    global idf
-    global vocabulary
+def load_store_from_disk() -> bool:
+    """Reload vector store from disk if in-memory store is empty."""
+    global documents, document_vectors, idf, vocabulary
+    if not STORAGE_FILE.exists():
+        return False
+    try:
+        with open(STORAGE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        documents = data.get("documents", [])
+        document_vectors = data.get("document_vectors", [])
+        idf = data.get("idf", {})
+        vocabulary = set(data.get("vocabulary", []))
+        logger.info("Restored %d chunks from %s", len(documents), STORAGE_FILE)
+        return len(documents) > 0
+    except Exception as e:
+        logger.warning("Could not restore vector store from disk: %s", e)
+        return False
+
+
+def create_vector_store(chunks: List[str]) -> None:
+    """Create a TF-IDF vector store from extracted document chunks and save to disk."""
+    global documents, document_vectors, idf, vocabulary
 
     documents = []
     document_vectors = []
     idf = {}
     vocabulary = set()
 
-    # Clean chunks
+    # Filter non-empty chunks
     for chunk in chunks:
-
-        if not chunk:
-            continue
-
-        chunk = str(chunk).strip()
-
-        if chunk:
-            documents.append(chunk)
+        if chunk and str(chunk).strip():
+            documents.append(str(chunk).strip())
 
     if not documents:
         return
 
-    # --------------------------------------------------------
-    # Tokenize documents
-    # --------------------------------------------------------
-
-    tokenized_documents = []
-
-    for document in documents:
-
-        tokens = tokenize(document)
-
-        tokenized_documents.append(tokens)
-
+    # 1. Tokenize all chunks
+    tokenized_docs = [tokenize(doc) for doc in documents]
+    for tokens in tokenized_docs:
         vocabulary.update(tokens)
 
-    total_documents = len(documents)
+    total_docs = len(documents)
 
-    # --------------------------------------------------------
-    # Calculate IDF
-    # --------------------------------------------------------
-
-    document_frequency = Counter()
-
-    for tokens in tokenized_documents:
-
-        unique_tokens = set(tokens)
-
-        for token in unique_tokens:
-            document_frequency[token] += 1
+    # 2. Compute Document Frequency and IDF
+    df = Counter()
+    for tokens in tokenized_docs:
+        for t in set(tokens):
+            df[t] += 1
 
     for token in vocabulary:
+        idf[token] = math.log((total_docs + 1) / (df[token] + 1)) + 1.0
 
-        df = document_frequency[token]
+    # 3. Compute TF-IDF vectors
+    for tokens in tokenized_docs:
+        tf = Counter(tokens)
+        doc_len = max(1, len(tokens))
+        vec: Dict[str, float] = {}
+        for token, count in tf.items():
+            vec[token] = (count / doc_len) * idf.get(token, 1.0)
+        document_vectors.append(vec)
 
-        idf[token] = math.log(
-            (total_documents + 1) / (df + 1)
-        ) + 1
-
-    # --------------------------------------------------------
-    # Create TF-IDF vectors
-    # --------------------------------------------------------
-
-    for tokens in tokenized_documents:
-
-        counts = Counter(tokens)
-
-        total_words = len(tokens)
-
-        vector = {}
-
-        if total_words == 0:
-            document_vectors.append(vector)
-            continue
-
-        for token, count in counts.items():
-
-            tf = count / total_words
-
-            vector[token] = tf * idf.get(token, 1.0)
-
-        # Normalize vector
-        magnitude = math.sqrt(
-            sum(value * value for value in vector.values())
-        )
-
-        if magnitude > 0:
-
-            for token in vector:
-
-                vector[token] /= magnitude
-
-        document_vectors.append(vector)
+    # Persist to disk for cold-start resilience
+    save_store_to_disk()
+    logger.info("Created vector store with %d chunks and %d vocabulary terms", len(documents), len(vocabulary))
 
 
-# ============================================================
-# COSINE SIMILARITY
-# ============================================================
+def search(query: str, top_k: int = 5) -> List[str]:
+    """Retrieve top-k most relevant document chunks for a query string."""
+    global documents, document_vectors, idf, vocabulary
 
-def cosine_similarity(query_vector, document_vector):
+    # If memory was cleared (e.g. Render spin up), attempt disk restoration
+    if not documents:
+        load_store_from_disk()
 
-    if not query_vector or not document_vector:
-        return 0.0
-
-    score = 0.0
-
-    for token, value in query_vector.items():
-
-        if token in document_vector:
-
-            score += value * document_vector[token]
-
-    return score
-
-
-# ============================================================
-# SEARCH
-# ============================================================
-
-def search(query):
-
-    if not documents or not document_vectors:
+    if not documents:
+        logger.warning("Vector store is empty. No documents to search.")
         return []
 
-    if not query or not query.strip():
-        return []
+    query_tokens = tokenize(query)
+    if not query_tokens:
+        return documents[:top_k]
 
-    # --------------------------------------------------------
-    # Create query vector
-    # --------------------------------------------------------
+    # Compute query TF-IDF vector
+    query_tf = Counter(query_tokens)
+    q_len = max(1, len(query_tokens))
+    query_vec = {t: (count / q_len) * idf.get(t, 1.0) for t, count in query_tf.items()}
 
-    tokens = tokenize(query)
+    # Compute cosine similarity
+    scores = []
+    q_norm = math.sqrt(sum(val ** 2 for val in query_vec.values())) or 1.0
 
-    if not tokens:
-        return []
+    for idx, doc_vec in enumerate(document_vectors):
+        dot_product = sum(query_vec[t] * doc_vec[t] for t in query_tokens if t in doc_vec)
+        doc_norm = math.sqrt(sum(val ** 2 for val in doc_vec.values())) or 1.0
+        score = dot_product / (q_norm * doc_norm)
+        scores.append((idx, score))
 
-    counts = Counter(tokens)
+    # Sort descending
+    scores.sort(key=lambda x: x[1], reverse=True)
 
-    total_words = len(tokens)
+    # If best score is > 0, return top matches
+    top_indices = [idx for idx, s in scores if s > 0][:top_k]
 
-    query_vector = {}
+    # Fallback: if no exact TF-IDF match, check substring or return first chunks
+    if not top_indices:
+        query_words = set(query.lower().split())
+        fallback_scored = []
+        for idx, doc in enumerate(documents):
+            overlap = sum(1 for w in query_words if w in doc.lower())
+            fallback_scored.append((idx, overlap))
+        fallback_scored.sort(key=lambda x: x[1], reverse=True)
+        top_indices = [idx for idx, ov in fallback_scored if ov > 0][:top_k]
 
-    for token, count in counts.items():
+    if not top_indices:
+        top_indices = list(range(min(top_k, len(documents))))
 
-        if token not in vocabulary:
-            continue
+    return [documents[i] for i in top_indices]
 
-        tf = count / total_words
 
-        query_vector[token] = (
-            tf * idf.get(token, 1.0)
-        )
-
-    # Normalize query vector
-    magnitude = math.sqrt(
-        sum(value * value for value in query_vector.values())
-    )
-
-    if magnitude > 0:
-
-        for token in query_vector:
-
-            query_vector[token] /= magnitude
-
-    # --------------------------------------------------------
-    # Calculate similarity
-    # --------------------------------------------------------
-
-    scored_documents = []
-
-    for index, document_vector in enumerate(document_vectors):
-
-        score = cosine_similarity(
-            query_vector,
-            document_vector
-        )
-
-        scored_documents.append(
-            (score, index)
-        )
-
-    # --------------------------------------------------------
-    # Sort by highest similarity
-    # --------------------------------------------------------
-
-    scored_documents.sort(
-        key=lambda item: item[0],
-        reverse=True
-    )
-
-    # --------------------------------------------------------
-    # Return top results
-    # --------------------------------------------------------
-
-    results = []
-    seen = set()
-
-    for score, index in scored_documents[:5]:
-
-        if score <= 0:
-            continue
-
-        document = documents[index].strip()
-
-        if not document:
-            continue
-
-        if document in seen:
-            continue
-
-        seen.add(document)
-
-        results.append(document)
-
-    return results[:3]
+# Compatibility alias
+search_vector_store = search

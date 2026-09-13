@@ -8,7 +8,46 @@
 // BACKEND URL
 // ============================================================
 
-const API_BASE = "https://arc-learns-api.onrender.com";
+const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    ? "http://localhost:8000"
+    : "https://arc-learns-api.onrender.com";
+
+// ============================================================
+// TOAST NOTIFICATIONS & COLD START HELPERS
+// ============================================================
+
+function showToast(message, type = "info", duration = 5000) {
+    let container = document.getElementById("toastContainer");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toastContainer";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+    }
+    const icons = {
+        info: "⚡",
+        success: "✓",
+        warning: "⚠️",
+        error: "✕"
+    };
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span class="toast-icon">${icons[type] || "•"}</span><span>${escapeHTML(message)}</span>`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add("toast-exit");
+        setTimeout(() => toast.remove(), 350);
+    }, duration);
+    return toast;
+}
+
+function withColdStartNotice(actionName = "Request") {
+    let timer = setTimeout(() => {
+        showToast("⚡ Initializing ARC AI cloud engine... Render free-tier can take ~30s on cold start.", "info", 9000);
+    }, 4500);
+    return () => clearTimeout(timer);
+}
 
 
 // ============================================================
@@ -339,8 +378,8 @@ async function uploadPDF() {
     );
 
 
+    const clearNotice = withColdStartNotice("Upload");
     try {
-
         const response =
             await fetch(
                 API_BASE + "/upload",
@@ -364,6 +403,7 @@ async function uploadPDF() {
         }
 
 
+        clearNotice();
         const data =
             await response.json();
 
@@ -418,7 +458,7 @@ async function uploadPDF() {
 
 
     } catch (error) {
-
+        clearNotice();
         console.error(
             "UPLOAD ERROR:",
             error
@@ -502,6 +542,7 @@ async function createAPIError(
 
     try {
 
+        clearNotice();
         const data =
             await response.json();
 
@@ -628,15 +669,10 @@ async function teachTopic() {
         '</div>';
 
 
+    const clearNotice = withColdStartNotice("Lesson");
     try {
-
-        // ====================================================
-        // Start streaming request
-        // ====================================================
-
         const response =
             await fetch(
-
                 API_BASE + "/teach/stream",
 
                 {
@@ -693,6 +729,8 @@ async function teachTopic() {
         // Prepare reader
         // ====================================================
 
+        clearNotice();
+        clearNotice();
         const reader =
             response.body.getReader();
 
@@ -796,7 +834,7 @@ async function teachTopic() {
 
 
     } catch (error) {
-
+        clearNotice();
         console.error(
             "TEACH STREAM ERROR:",
             error
@@ -899,15 +937,10 @@ async function sendChat() {
     isChatting = true;
 
 
+    const clearNotice = withColdStartNotice("Chat");
     try {
-
-        // ====================================================
-        // Connect to streaming endpoint
-        // ====================================================
-
         const response =
             await fetch(
-
                 API_BASE + "/chat/stream",
 
                 {
@@ -959,6 +992,8 @@ async function sendChat() {
         // Get response reader
         // ====================================================
 
+        clearNotice();
+        clearNotice();
         const reader =
             response.body.getReader();
 
@@ -1074,7 +1109,7 @@ async function sendChat() {
 
 
     } catch (error) {
-
+        clearNotice();
         console.error(
             "CHAT STREAM ERROR:",
             error
@@ -1344,8 +1379,8 @@ async function generateQuiz() {
         '</div>';
 
 
+    const clearNotice = withColdStartNotice("Quiz");
     try {
-
         const response =
             await fetch(
                 API_BASE + "/quiz",
@@ -1383,9 +1418,10 @@ async function generateQuiz() {
         }
 
 
+        clearNotice();
+        clearNotice();
         const data =
             await response.json();
-
 
         if (
             !data.quiz ||
@@ -1419,7 +1455,7 @@ async function generateQuiz() {
 
 
     } catch (error) {
-
+        clearNotice();
         console.error(
             "QUIZ ERROR:",
             error
@@ -1905,175 +1941,77 @@ function showQuizResult() {
 // ============================================================
 
 function formatText(text) {
-
     if (!text) {
-
         return "";
-
     }
 
+    let raw = String(text);
 
-    let formatted =
-        escapeHTML(
-            String(text)
-        );
+    // Strip reasoning / thinking tokens from deep-reasoning models
+    raw = raw.replace(/<think>[\s\S]*?<\/think>/gi, "");
+    raw = raw.replace(/<think>[\s\S]*/gi, "");
 
+    // Extract fenced code blocks before HTML escaping
+    const codeBlocks = [];
+    raw = raw.replace(/```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/g, function(match, lang, code) {
+        const placeholder = "___CODE_BLOCK_" + codeBlocks.length + "___";
+        codeBlocks.push({ lang: lang || "code", code: code.trim() });
+        return placeholder;
+    });
 
-    formatted =
-        formatted.replace(
-            /\\n/g,
-            "\n"
-        );
+    let formatted = escapeHTML(raw);
+    formatted = formatted.replace(/\\n/g, "\n");
 
-
-    formatted =
-        formatted.replace(
-            /```/g,
-            ""
-        );
-
+    // Inline code
+    formatted = formatted.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
 
     // Headings
-
-    formatted =
-        formatted.replace(
-            /^### (.*)$/gm,
-            '<h3 class="lesson-heading">$1</h3>'
-        );
-
-
-    formatted =
-        formatted.replace(
-            /^## (.*)$/gm,
-            '<h2 class="lesson-heading">$1</h2>'
-        );
-
-
-    formatted =
-        formatted.replace(
-            /^# (.*)$/gm,
-            '<h1 class="lesson-heading">$1</h1>'
-        );
-
+    formatted = formatted.replace(/^### (.*)$/gm, '<h3 class="lesson-heading">$1</h3>');
+    formatted = formatted.replace(/^## (.*)$/gm, '<h2 class="lesson-heading">$1</h2>');
+    formatted = formatted.replace(/^# (.*)$/gm, '<h1 class="lesson-heading">$1</h1>');
 
     // Numbered ARC sections
-
-    formatted =
-        formatted.replace(
-
-            /^(\d+)\.\s+(Introduction|Core Concept|Detailed Explanation|Simple Example|Important Points|Quick Revision)\s*$/gm,
-
-            '<h2 class="lesson-section">$1. $2</h2>'
-
-        );
-
-
-    // Bold
-
-    formatted =
-        formatted.replace(
-
-            /\*\*(.*?)\*\*/g,
-
-            "<strong>$1</strong>"
-
-        );
-
-
-    // Italic
-
-    formatted =
-        formatted.replace(
-
-            /(?<!\*)\*([^*\n]+)\*(?!\*)/g,
-
-            "<em>$1</em>"
-
-        );
-
-
-    // Bullet points
-
-    formatted =
-        formatted.replace(
-
-            /^\s*[-*]\s+(.*)$/gm,
-
-            "<li>$1</li>"
-
-        );
-
-
-    // Numbered lists
-
-    formatted =
-        formatted.replace(
-
-            /^\s*\d+\.\s+(?!Introduction|Core Concept|Detailed Explanation|Simple Example|Important Points|Quick Revision)(.*)$/gm,
-
-            "<li>$1</li>"
-
-        );
-
-
-    // Consecutive list items
-
-    formatted =
-        formatted.replace(
-
-            /(<li>.*?<\/li>\s*)+/gs,
-
-            function(match) {
-
-                return (
-                    "<ul>" +
-                    match +
-                    "</ul>"
-                );
-
-            }
-
-        );
-
-
-    // Paragraph breaks
-
-    formatted =
-        formatted.replace(
-
-            /\n{2,}/g,
-
-            "</p><p>"
-
-        );
-
-
-    // Single newlines
-
-    formatted =
-        formatted.replace(
-
-            /\n/g,
-
-            "<br>"
-
-        );
-
-
-    return (
-
-        "<div class='lesson-text'>" +
-
-        "<p>" +
-
-        formatted +
-
-        "</p>" +
-
-        "</div>"
-
+    formatted = formatted.replace(
+        /^(\d+)\.\s+(Introduction|Core Concept|Detailed Explanation|Simple Example|Important Points|Quick Revision)\s*$/gm,
+        '<h2 class="lesson-section">$1. $2</h2>'
     );
 
+    // Bold
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+    // Italic
+    formatted = formatted.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "<em>$1</em>");
+
+    // Bullet points
+    formatted = formatted.replace(/^\s*[-*]\s+(.*)$/gm, "<li>$1</li>");
+
+    // Numbered lists
+    formatted = formatted.replace(
+        /^\s*\d+\.\s+(?!Introduction|Core Concept|Detailed Explanation|Simple Example|Important Points|Quick Revision)(.*)$/gm,
+        "<li>$1</li>"
+    );
+
+    // Consecutive list items to ul
+    formatted = formatted.replace(/(<li>.*?<\/li>\s*)+/gs, function(match) {
+        return "<ul>" + match + "</ul>";
+    });
+
+    // Paragraph breaks
+    formatted = formatted.replace(/\n{2,}/g, "</p><p>");
+    formatted = formatted.replace(/\n/g, "<br>");
+
+    // Re-insert styled code blocks
+    codeBlocks.forEach(function(item, idx) {
+        const placeholder = "___CODE_BLOCK_" + idx + "___";
+        const codeHtml =
+            '<pre class="code-block">' +
+            '<div class="code-header"><span>' + escapeHTML(item.lang) + '</span></div>' +
+            '<code>' + escapeHTML(item.code) + '</code>' +
+            '</pre>';
+        formatted = formatted.replace(placeholder, codeHtml);
+    });
+
+    return "<div class='lesson-text'><p>" + formatted + "</p></div>";
 }
 
 
@@ -2428,6 +2366,7 @@ async function checkBackend() {
         }
 
 
+        clearNotice();
         const data =
             await response.json();
 
@@ -2751,15 +2690,10 @@ async function sendARC0FromUI() {
         messages.scrollHeight;
 
 
+    const clearNotice = withColdStartNotice("ARC 0");
     try {
-
-        // ====================================================
-        // Start streaming request
-        // ====================================================
-
         const response =
             await fetch(
-
                 API_BASE + "/arc0/stream",
 
                 {
@@ -2819,6 +2753,8 @@ async function sendARC0FromUI() {
         // Prepare stream reader
         // ====================================================
 
+        clearNotice();
+        clearNotice();
         const reader =
             response.body.getReader();
 
@@ -2931,7 +2867,7 @@ async function sendARC0FromUI() {
 
 
     } catch (error) {
-
+        clearNotice();
         console.error(
             "ARC 0 STREAM ERROR:",
             error

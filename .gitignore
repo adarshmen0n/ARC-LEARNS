@@ -1,0 +1,31 @@
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.class
+.pytest_cache/
+
+# Virtual Environment
+arcvenv/
+venv/
+.venv/
+env/
+
+# Runtime Data
+processed/
+uploads/
+vector_db/
+backend/processed/
+backend/uploads/
+backend/vector_db/
+
+# Logs & System
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

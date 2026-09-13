@@ -16,23 +16,36 @@ app = FastAPI(
 )
 
 
+import os
+
 # ============================================================
-# CORS
+# CORS CONFIGURATION
 # ============================================================
+
+cors_env = os.getenv("CORS_ORIGINS", "")
+allowed_origins = [
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "https://arc-learns.onrender.com",
+    "https://arc-learns-api.onrender.com",
+]
+if cors_env:
+    for origin in cors_env.split(","):
+        if origin.strip() and origin.strip() not in allowed_origins:
+            allowed_origins.append(origin.strip())
 
 app.add_middleware(
     CORSMiddleware,
-
-    allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "https://arc-learns.onrender.com"
-    ],
-
-    allow_credentials=False,
-
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.onrender\.com",
+    allow_credentials=True,
     allow_methods=["*"],
-
     allow_headers=["*"],
 )
 
