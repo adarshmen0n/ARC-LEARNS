@@ -42,7 +42,7 @@ def get_openrouter_headers() -> Dict[str, str]:
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://arc-learns.onrender.com",
-        "X-Title": "ARCANA AI Engine",
+        "X-Title": "ARC LEARN",
     }
 
 
@@ -202,41 +202,47 @@ def ask_openrouter(
     question: str,
     use_web_search: bool = False,
     response_format: Optional[Dict[str, Any]] = None,
+    history: Optional[List[Dict[str, str]]] = None,
+    max_tokens: int = 2500,
 ) -> str:
-    """ARC LEARNS AI Teacher non-streaming."""
-    prompt = f"""You are ARC LEARNS, an expert educational AI Teacher.
-
-INSTRUCTIONS:
-- Use the study material provided below as your primary source.
-- Explain concepts clearly, accurately, and step-by-step.
-- Never invent facts not supported by the material.
-- If the question cannot be answered from the material, politely explain that.
+    """ARC LEARN AI Teacher non-streaming."""
+    if context:
+        user_prompt = f"""Use the study material provided below to answer the student's question clearly and accurately.
 
 STUDY MATERIAL:
 {context}
 
-STUDENT QUESTION / TOPIC:
+STUDENT QUESTION:
 {question}
 """
-    messages = [
-        {"role": "system", "content": "You are ARC LEARNS, an encouraging and structured AI Teacher."},
-        {"role": "user", "content": prompt},
+    else:
+        user_prompt = question
+
+    messages: List[Dict[str, str]] = [
+        {"role": "system", "content": "You are ARC LEARN, an expert, patient, and highly encouraging educational AI Teacher."},
     ]
-    return call_llm_with_fallback(messages)
+
+    if history:
+        for turn in history[-6:]:
+            role = turn.get("role", "user")
+            content = turn.get("content", "")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": content})
+
+    messages.append({"role": "user", "content": user_prompt})
+    return call_llm_with_fallback(messages, max_tokens=max_tokens)
 
 
 def ask_openrouter_stream(
     context: str,
     question: str,
     use_web_search: bool = False,
+    history: Optional[List[Dict[str, str]]] = None,
+    max_tokens: int = 2500,
 ) -> Generator[str, None, None]:
-    """ARC LEARNS AI Teacher streaming."""
-    prompt = f"""You are ARC LEARNS, an expert educational AI Teacher.
-
-INSTRUCTIONS:
-- Teach the student using the study material provided below.
-- Keep your explanation structured, clear, and engaging.
-- Use headings, examples, and key points.
+    """ARC LEARN AI Teacher streaming."""
+    if context:
+        user_prompt = f"""Teach the student using the study material provided below. Keep your explanation structured, clear, and engaging with headings, examples, and key points.
 
 STUDY MATERIAL:
 {context}
@@ -244,32 +250,81 @@ STUDY MATERIAL:
 STUDENT QUESTION / TOPIC:
 {question}
 """
-    messages = [
-        {"role": "system", "content": "You are ARC LEARNS, a helpful educational AI teacher."},
-        {"role": "user", "content": prompt},
+    else:
+        user_prompt = question
+
+    messages: List[Dict[str, str]] = [
+        {"role": "system", "content": "You are ARC LEARN, a helpful, patient, and pedagogically structured AI Teacher."},
     ]
-    return call_llm_stream_with_fallback(messages)
+
+    if history:
+        for turn in history[-6:]:
+            role = turn.get("role", "user")
+            content = turn.get("content", "")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": content})
+
+    messages.append({"role": "user", "content": user_prompt})
+    return call_llm_stream_with_fallback(messages, max_tokens=max_tokens)
 
 
 def ask_arc0(
     question: str,
     use_web_search: bool = True,
+    history: Optional[List[Dict[str, str]]] = None,
+    max_tokens: int = 2000,
 ) -> str:
     """ARC 0 General Assistant non-streaming."""
-    messages = [
-        {"role": "system", "content": "You are ARC 0, an intelligent, versatile general-purpose AI assistant inside ARC LEARNS. Provide helpful, accurate, and structured answers on any topic."},
-        {"role": "user", "content": question},
+    messages: List[Dict[str, str]] = [
+        {
+            "role": "system",
+            "content": (
+                "You are ARC Zero, an ultra-fast, intelligent, and versatile AI assistant inside ARC LEARN. "
+                "You have vast, up-to-date domain knowledge across computer science, mathematics, natural sciences, "
+                "engineering, and world events up to 2026. "
+                "Answer directly and scale your depth to the complexity of the question: keep simple lookups concise, "
+                "and explain complex multi-step concepts thoroughly with code, math, or clear structured sections."
+            ),
+        },
     ]
-    return call_llm_with_fallback(messages)
+
+    if history:
+        for turn in history[-6:]:
+            role = turn.get("role", "user")
+            content = turn.get("content", "")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": content})
+
+    messages.append({"role": "user", "content": question})
+    return call_llm_with_fallback(messages, max_tokens=max_tokens)
 
 
 def ask_arc0_stream(
     question: str,
     use_web_search: bool = True,
+    history: Optional[List[Dict[str, str]]] = None,
+    max_tokens: int = 2000,
 ) -> Generator[str, None, None]:
     """ARC 0 General Assistant streaming."""
-    messages = [
-        {"role": "system", "content": "You are ARC 0, an intelligent, versatile general-purpose AI assistant inside ARC LEARNS. Provide helpful, accurate, and structured answers on any topic."},
-        {"role": "user", "content": question},
+    messages: List[Dict[str, str]] = [
+        {
+            "role": "system",
+            "content": (
+                "You are ARC Zero, an ultra-fast, intelligent, and versatile AI assistant inside ARC LEARN. "
+                "You have vast, up-to-date domain knowledge across computer science, mathematics, natural sciences, "
+                "engineering, and world events up to 2026. "
+                "Answer directly and scale your depth to the complexity of the question: keep simple lookups concise, "
+                "and explain complex multi-step concepts thoroughly with code, math, or clear structured sections."
+            ),
+        },
     ]
-    return call_llm_stream_with_fallback(messages)
+
+    if history:
+        for turn in history[-6:]:
+            role = turn.get("role", "user")
+            content = turn.get("content", "")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": content})
+
+    messages.append({"role": "user", "content": question})
+    return call_llm_stream_with_fallback(messages, max_tokens=max_tokens)

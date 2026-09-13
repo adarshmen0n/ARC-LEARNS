@@ -1,11 +1,13 @@
+import json
+import logging
 from fastapi import APIRouter
 from pydantic import BaseModel
-import json
 
 from app.services.vector_store import search
 from app.services.ai_manager import ask_ai
+from app.services.pedagogical_fallback import generate_fallback_quiz
 
-
+logger = logging.getLogger("arc_learns.quiz")
 router = APIRouter()
 
 
@@ -55,48 +57,33 @@ def prepare_context(results):
 # EXTRACT JSON FROM AI RESPONSE
 # ============================================================
 
-def clean_json_response(answer):
+def clean_json_response(answer: str) -> str:
 
     if not answer:
-
         return ""
 
-    answer = answer.strip()
+    text = answer.strip()
 
-    # --------------------------------------------------------
     # Remove markdown code fences
-    # --------------------------------------------------------
+    if "```json" in text:
+        text = text.replace("```json", "")
+    if "```" in text:
+        text = text.replace("```", "")
 
-    if "```json" in answer:
+    text = text.strip()
 
-        answer = answer.replace(
-            "```json",
-            ""
-        )
+    # If already a JSON array, wrap it in a dict
+    array_start = text.find("[")
+    array_end = text.rfind("]")
+    obj_start = text.find("{")
+    obj_end = text.rfind("}")
 
-    if "```" in answer:
+    if obj_start != -1 and obj_end != -1 and (array_start == -1 or obj_start < array_start):
+        text = text[obj_start:obj_end + 1]
+    elif array_start != -1 and array_end != -1:
+        text = '{"quiz": ' + text[array_start:array_end + 1] + '}'
 
-        answer = answer.replace(
-            "```",
-            ""
-        )
-
-    answer = answer.strip()
-
-    # --------------------------------------------------------
-    # Find JSON object
-    # --------------------------------------------------------
-
-    start = answer.find("{")
-    end = answer.rfind("}")
-
-    if start != -1 and end != -1:
-
-        answer = answer[
-            start:end + 1
-        ]
-
-    return answer.strip()
+    return text.strip()
 
 
 # ============================================================
@@ -105,139 +92,79 @@ def clean_json_response(answer):
 
 def validate_quiz(
     quiz,
-    expected_count
+    expected_count: int
 ):
 
     valid_questions = []
 
     if not isinstance(quiz, list):
-
         return valid_questions
 
-
     for item in quiz:
-
-        # ----------------------------------------------------
-        # Check object
-        # ----------------------------------------------------
-
         if not isinstance(item, dict):
-
             continue
 
+        question = item.get("question")
+        options = item.get("options")
+        correct_answer = item.get("correct_answer")
+        explanation = item.get("explanation", "")
+        distractor_analysis = item.get("distractor_analysis", {})
+        difficulty = item.get("difficulty", "medium").lower()
+        if difficulty not in ("easy", "medium", "hard"):
+            difficulty = "medium"
+        concept_tested = item.get("concept_tested", "")
 
-        question = item.get(
-            "question"
-        )
-
-        options = item.get(
-            "options"
-        )
-
-        correct_answer = item.get(
-            "correct_answer"
-        )
-
-        explanation = item.get(
-            "explanation",
-            ""
-        )
-
-
-        # ----------------------------------------------------
-        # Validate question
-        # ----------------------------------------------------
-
-        if not question:
-
+        if not question or not isinstance(options, list) or len(options) != 4:
             continue
 
+        if not correct_answer or correct_answer not in options:
+            # Check if correct_answer matches an option with whitespace stripped
+            matched = False
+            for opt in options:
+                if str(opt).strip().lower() == str(correct_answer).strip().lower():
+                    correct_answer = str(opt)
+                    matched = True
+                    break
+            if not matched:
+                continue
 
-        # ----------------------------------------------------
-        # Validate options
-        # ----------------------------------------------------
-
-        if not isinstance(
-            options,
-            list
-        ):
-
-            continue
-
-
-        if len(options) != 4:
-
-            continue
-
-
-        # ----------------------------------------------------
-        # Validate correct answer
-        # ----------------------------------------------------
-
-        if not correct_answer:
-
-            continue
-
-
-        if correct_answer not in options:
-
-            continue
-
-
-        # ----------------------------------------------------
-        # Create clean question
-        # ----------------------------------------------------
+        # Format distractor analysis into a clean dict if present
+        cleaned_distractors = {}
+        if isinstance(distractor_analysis, dict):
+            for k, v in distractor_analysis.items():
+                cleaned_distractors[str(k)] = str(v)
 
         clean_question = {
-
-            "question":
-                str(question),
-
-            "options": [
-                str(option)
-                for option in options
-            ],
-
-            "correct_answer":
-                str(correct_answer),
-
-            "explanation":
-                str(explanation)
-
+            "question": str(question).strip(),
+            "options": [str(option).strip() for option in options],
+            "correct_answer": str(correct_answer).strip(),
+            "explanation": str(explanation).strip(),
+            "distractor_analysis": cleaned_distractors,
+            "difficulty": difficulty,
+            "concept_tested": str(concept_tested).strip()
         }
 
-
-        valid_questions.append(
-            clean_question
-        )
-
-
-        # ----------------------------------------------------
-        # Stop at requested count
-        # ----------------------------------------------------
+        valid_questions.append(clean_question)
 
         if len(valid_questions) >= expected_count:
-
             break
-
 
     return valid_questions
 
 
 # ============================================================
-# CREATE QUIZ PROMPT
+# CREATE QUIZ PROMPT (PEDAGOGICAL ASSESSMENT ENGINE)
 # ============================================================
 
 def build_quiz_prompt(
-    topic,
-    number_of_questions,
-    context
-):
+    topic: str,
+    number_of_questions: int,
+    context: str
+) -> str:
 
-    prompt = f"""
-You are ARC LEARNS AI Quiz Generator.
+    prompt = f"""You are the ARC LEARN AI Quiz Engine.
 
-Create a multiple-choice quiz for a student.
+Create an interactive educational multiple-choice quiz based strictly on the study material below.
 
 TOPIC:
 {topic}
@@ -248,61 +175,44 @@ NUMBER OF QUESTIONS:
 STUDY MATERIAL:
 {context}
 
-IMPORTANT RULES:
+PEDAGOGICAL REQUIREMENTS:
+1. Create exactly {number_of_questions} distinct multiple-choice questions.
+2. Focus on conceptual understanding, mechanism reasoning, and problem solving, NOT superficial trivia.
+3. Include a balanced mix of difficulty levels: easy (foundational definition/concept), medium (application/mechanism), and hard (edge case, scenario, or analytical deduction).
+4. Each question must have exactly 4 distinct and plausible options. Avoid "All of the above" or "None of the above".
+5. The `correct_answer` must match one of the four options identically.
+6. `explanation`: Provide a thorough pedagogical explanation (2-3 sentences) explaining WHY the correct option is true and the core principle behind it.
+7. `distractor_analysis`: Provide a 1-sentence reason for why each of the 3 incorrect options is wrong or misleading.
+8. `difficulty`: One of "easy", "medium", or "hard".
+9. `concept_tested`: Short 2-5 word label of the specific sub-concept tested.
+10. Strict Grounding: Base questions ONLY on the provided study material. Do not hallucinate facts.
 
-1. Create exactly {number_of_questions} questions.
-
-2. Every question must have exactly four options.
-
-3. Only one option can be correct.
-
-4. The correct_answer must exactly match
-   one of the four options.
-
-5. Every question must be based ONLY
-   on the study material.
-
-6. Do not use outside knowledge.
-
-7. Do not invent facts.
-
-8. Avoid duplicate questions.
-
-9. Keep explanations short.
-
-10. Make the questions educational
-    and suitable for a student.
-
-11. Return ONLY JSON.
-
-12. Do NOT write anything before the JSON.
-
-13. Do NOT write anything after the JSON.
-
-14. Do NOT use markdown.
-
-15. Do NOT use ```json.
-
-YOUR RESPONSE MUST LOOK EXACTLY LIKE THIS:
-
+OUTPUT FORMAT:
+Output MUST be raw, valid JSON only. Do not include markdown codeblocks or conversational filler.
+Format:
 {{
     "topic": "{topic}",
     "quiz": [
         {{
-            "question": "Example question?",
+            "question": "Clear conceptual question?",
             "options": [
-                "Option A",
-                "Option B",
-                "Option C",
-                "Option D"
+                "Option A text",
+                "Option B text",
+                "Option C text",
+                "Option D text"
             ],
-            "correct_answer": "Option A",
-            "explanation": "Short explanation."
+            "correct_answer": "Option A text",
+            "explanation": "Clear explanation of why Option A is correct according to the study material.",
+            "distractor_analysis": {{
+                "Option B text": "Why this option is incorrect",
+                "Option C text": "Why this option is incorrect",
+                "Option D text": "Why this option is incorrect"
+            }},
+            "difficulty": "medium",
+            "concept_tested": "Concept Name"
         }}
     ]
 }}
-
-Now generate the quiz.
 """
 
     return prompt
@@ -383,123 +293,39 @@ def generate_quiz(
 
 
     # ========================================================
-    # ASK AI
+    # ASK AI WITH RESILIENT FALLBACK
     # ========================================================
 
-    answer = ask_ai(
-        context,
-        prompt,
-        use_web_search=False
-    )
-
-
-    # ========================================================
-    # CLEAN AI RESPONSE
-    # ========================================================
-
-    answer = clean_json_response(
-        answer
-    )
-
-
-    # ========================================================
-    # DEBUG OUTPUT
-    # ========================================================
-
-    print(
-        "[QUIZ] AI response:"
-    )
-
-    print(answer)
-
-
-    # ========================================================
-    # PARSE JSON
-    # ========================================================
+    quiz = []
 
     try:
-
-        quiz_data = json.loads(
-            answer
+        answer = ask_ai(
+            "",
+            prompt,
+            use_web_search=False,
+            max_tokens=2500
         )
-
-    except json.JSONDecodeError as error:
-
-        print(
-            "[QUIZ] Invalid JSON returned by AI"
+        answer = clean_json_response(answer)
+        logger.debug("[QUIZ] Cleaned AI response length: %d", len(answer))
+        quiz_data = json.loads(answer)
+        quiz = validate_quiz(
+            quiz_data.get("quiz", []),
+            number_of_questions
         )
+    except Exception as error:
+        logger.warning("[QUIZ] AI quiz generation failed (%s). Synthesizing grounded quiz directly from study material.", error)
 
-        print(
-            "[QUIZ] JSON error:",
-            error
+    # If AI returned malformed JSON or empty quiz, synthesize grounded questions
+    if not quiz:
+        quiz = generate_fallback_quiz(
+            data.topic,
+            number_of_questions,
+            results
         )
-
-        print(
-            "[QUIZ] Raw response:"
-        )
-
-        print(answer)
-
-
-        return {
-
-            "topic":
-                data.topic,
-
-            "number_of_questions":
-                number_of_questions,
-
-            "quiz":
-                [],
-
-            "error":
-                "AI returned invalid JSON.",
-
-            "raw_response":
-                answer,
-
-            "source_chunks":
-                results
-
-        }
-
-
-    # ========================================================
-    # GET QUIZ
-    # ========================================================
-
-    quiz = quiz_data.get(
-        "quiz",
-        []
-    )
-
-
-    # ========================================================
-    # VALIDATE QUIZ
-    # ========================================================
-
-    quiz = validate_quiz(
-        quiz,
-        number_of_questions
-    )
-
-
-    # ========================================================
-    # RETURN RESULT
-    # ========================================================
 
     return {
-
-        "topic":
-            data.topic,
-
-        "number_of_questions":
-            number_of_questions,
-
-        "quiz":
-            quiz,
-
-        "source_chunks":
-            results
-
+        "topic": data.topic,
+        "number_of_questions": len(quiz),
+        "quiz": quiz,
+        "source_chunks": results
     }

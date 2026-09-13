@@ -70,6 +70,12 @@ let currentQuizAnswered = 0;
 
 let currentQuizCorrect = 0;
 
+let missedConcepts = [];
+
+let chatHistory = [];
+
+let arc0History = [];
+
 let isUploading = false;
 
 let isTeaching = false;
@@ -199,13 +205,13 @@ function updatePageTitle(sectionId) {
 
 
     const titles = {
-        landing: "ARCANA AI System",
+        landing: "ARC LEARN Platform",
         studio: "Integrated Studio Workspace",
         learn: "Interactive AI Teacher",
         chat: "Ask Your Study Material",
         arc0: "ARC Zero — Universal Intelligence",
         quiz: "Turbo Assessment Quiz",
-        dashboard: "ARCANA Learning Dashboard"
+        dashboard: "ARC LEARN Dashboard"
     };
 
 
@@ -949,9 +955,8 @@ async function sendChat() {
                     },
 
                     body: JSON.stringify({
-
-                        question: question
-
+                        question: question,
+                        history: chatHistory.slice(-6)
                     })
 
                 }
@@ -1100,6 +1105,9 @@ async function sendChat() {
             }
 
         }
+
+        chatHistory.push({ role: "user", content: question });
+        chatHistory.push({ role: "assistant", content: answer });
 
 
     } catch (error) {
@@ -1570,370 +1578,229 @@ function renderQuiz(quiz) {
 
 
     output.innerHTML = "";
+    missedConcepts = [];
 
+    const quizContainer = document.createElement("div");
+    quizContainer.className = "quiz-container";
 
-    const quizContainer =
-        document.createElement(
-            "div"
-        );
+    quiz.forEach(function(item, questionIndex) {
+        const card = document.createElement("div");
+        card.className = "quiz-card";
 
+        // Meta Header: Question #, Difficulty, Concept Tag
+        const metaRow = document.createElement("div");
+        metaRow.className = "quiz-meta-row";
 
-    quizContainer.className =
-        "quiz-container";
+        const number = document.createElement("span");
+        number.className = "quiz-number";
+        number.textContent = "Q" + (questionIndex + 1);
 
+        const diffBadge = document.createElement("span");
+        const diff = (item.difficulty || "medium").toLowerCase();
+        diffBadge.className = "badge-difficulty " + diff;
+        diffBadge.textContent = diff.toUpperCase();
 
-    quiz.forEach(
-        function(item, questionIndex) {
+        metaRow.appendChild(number);
+        metaRow.appendChild(diffBadge);
 
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-
-            card.className =
-                "quiz-card";
-
-
-            const number =
-                document.createElement(
-                    "div"
-                );
-
-
-            number.className =
-                "quiz-number";
-
-
-            number.textContent =
-                "QUESTION " +
-                (questionIndex + 1);
-
-
-            card.appendChild(
-                number
-            );
-
-
-            const question =
-                document.createElement(
-                    "h3"
-                );
-
-
-            question.className =
-                "quiz-question";
-
-
-            question.textContent =
-                item.question ||
-                "Question";
-
-
-            card.appendChild(
-                question
-            );
-
-
-            const options =
-                Array.isArray(
-                    item.options
-                )
-                    ? item.options
-                    : [];
-
-
-            const optionsContainer =
-                document.createElement(
-                    "div"
-                );
-
-
-            optionsContainer.className =
-                "quiz-options";
-
-
-            options.forEach(
-                function(option) {
-
-                    const button =
-                        document.createElement(
-                            "button"
-                        );
-
-
-                    button.className =
-                        "quiz-option";
-
-
-                    button.textContent =
-                        option;
-
-
-                    button.onclick =
-                        function() {
-
-                            handleQuizAnswer(
-
-                                button,
-
-                                option,
-
-                                item.correct_answer,
-
-                                card,
-
-                                item.explanation
-
-                            );
-
-                        };
-
-
-                    optionsContainer.appendChild(
-                        button
-                    );
-
-                }
-            );
-
-
-            card.appendChild(
-                optionsContainer
-            );
-
-
-            quizContainer.appendChild(
-                card
-            );
-
+        if (item.concept_tested) {
+            const conceptBadge = document.createElement("span");
+            conceptBadge.className = "badge-concept";
+            conceptBadge.textContent = item.concept_tested;
+            metaRow.appendChild(conceptBadge);
         }
-    );
 
+        card.appendChild(metaRow);
 
-    output.appendChild(
-        quizContainer
-    );
+        // Question Title
+        const question = document.createElement("h3");
+        question.className = "quiz-question";
+        question.textContent = item.question || "Question";
+        card.appendChild(question);
 
+        // Options
+        const options = Array.isArray(item.options) ? item.options : [];
+        const optionsContainer = document.createElement("div");
+        optionsContainer.className = "quiz-options";
+
+        options.forEach(function(option) {
+            const button = document.createElement("button");
+            button.className = "quiz-option";
+            button.textContent = option;
+
+            button.onclick = function() {
+                handleQuizAnswer(
+                    button,
+                    option,
+                    item,
+                    card
+                );
+            };
+
+            optionsContainer.appendChild(button);
+        });
+
+        card.appendChild(optionsContainer);
+        quizContainer.appendChild(card);
+    });
+
+    output.appendChild(quizContainer);
 }
 
 
 // ============================================================
-// HANDLE QUIZ ANSWER
+// HANDLE QUIZ ANSWER (IMMEDIATE PEDAGOGICAL FEEDBACK)
 // ============================================================
 
 function handleQuizAnswer(
     clickedButton,
     selectedAnswer,
-    correctAnswer,
-    card,
-    explanation
+    item,
+    card
 ) {
-
     if (!clickedButton || !card) {
         return;
     }
-
 
     // Prevent answering the same question twice
     if (card.dataset.answered === "true") {
         return;
     }
-
     card.dataset.answered = "true";
 
+    const correctAnswer = item.correct_answer;
+    const explanation = item.explanation;
+    const distractorAnalysis = item.distractor_analysis || {};
 
-    // Disable all options
-    const optionButtons =
-        card.querySelectorAll(
-            ".quiz-option, .option"
-        );
-
-
-    optionButtons.forEach(
-        function(button) {
-
-            button.disabled = true;
-
-
-            if (
-                button.textContent.trim() ===
-                String(correctAnswer).trim()
-            ) {
-
-                button.classList.add(
-                    "correct"
-                );
-
-            }
-
+    // Disable all option buttons in this card
+    const optionButtons = card.querySelectorAll(".quiz-option, .quiz-option-btn");
+    optionButtons.forEach(function(button) {
+        button.disabled = true;
+        if (button.textContent.trim() === String(correctAnswer).trim()) {
+            button.classList.add("correct");
         }
-    );
+    });
 
-
-    // Compare answers
-    const selected =
-        String(selectedAnswer).trim();
-
-    const correct =
-        String(correctAnswer).trim();
-
+    // Check correctness
+    const selected = String(selectedAnswer).trim();
+    const correct = String(correctAnswer).trim();
 
     if (selected === correct) {
-
-        clickedButton.classList.add(
-            "correct"
-        );
-
+        clickedButton.classList.add("correct");
         currentQuizCorrect++;
-
+    } else {
+        clickedButton.classList.add("wrong");
+        if (item.concept_tested && !missedConcepts.includes(item.concept_tested)) {
+            missedConcepts.push(item.concept_tested);
+        }
     }
-
-    else {
-
-        clickedButton.classList.add(
-            "wrong"
-        );
-
-    }
-
 
     currentQuizAnswered++;
 
+    // Render In-Depth Pedagogical Explanation
+    const explanationDiv = document.createElement("div");
+    explanationDiv.className = "quiz-explanation";
 
-    // Show explanation
-    if (explanation) {
+    let explanationHtml = "<p><strong>" + (selected === correct ? "✓ Correct!" : "✕ Incorrect.") + "</strong> " + escapeHTML(explanation) + "</p>";
 
-        const explanationDiv =
-            document.createElement(
-                "div"
-            );
-
-
-        explanationDiv.className =
-            "explanation";
-
-
-        explanationDiv.innerHTML =
-            "<strong>Explanation:</strong><br>" +
-            escapeHTML(explanation);
-
-
-        card.appendChild(
-            explanationDiv
-        );
-
+    // Add distractor analysis if available
+    if (distractorAnalysis && typeof distractorAnalysis === "object") {
+        const distractorKeys = Object.keys(distractorAnalysis);
+        if (distractorKeys.length > 0) {
+            explanationHtml += "<div class=\"distractor-box\"><strong>Why other options are incorrect:</strong>";
+            distractorKeys.forEach(function(optKey) {
+                if (optKey.trim() !== correct) {
+                    explanationHtml += "<div class=\"distractor-item\">• <em>" + escapeHTML(optKey) + ":</em> " + escapeHTML(distractorAnalysis[optKey]) + "</div>";
+                }
+            });
+            explanationHtml += "</div>";
+        }
     }
 
+    explanationDiv.innerHTML = explanationHtml;
+    card.appendChild(explanationDiv);
 
-    // Quiz completed
-    if (
-        currentQuizAnswered >=
-        currentQuizTotal
-    ) {
-
+    // If all questions are answered, show performance report
+    if (currentQuizAnswered >= currentQuizTotal) {
         quizzesTaken++;
-
-
-        // Calculate this quiz's percentage
-        const quizPercentage =
-            currentQuizTotal > 0
-                ? (
-                    currentQuizCorrect /
-                    currentQuizTotal
-                ) * 100
-                : 0;
-
-
-        // Store the percentage
-        totalQuizScore +=
-            quizPercentage;
-
-
+        const quizPercentage = currentQuizTotal > 0 ? (currentQuizCorrect / currentQuizTotal) * 100 : 0;
+        totalQuizScore += quizPercentage;
         showQuizResult();
-
     }
-
 
     updateProgress();
-
 }
 
 
 // ============================================================
-// QUIZ RESULT
+// QUIZ RESULT (COMPREHENSIVE RETENTION SUMMARY)
 // ============================================================
 
 function showQuizResult() {
+    const output = document.getElementById("quizOutput");
+    if (!output) return;
 
-    const output =
-        document.getElementById(
-            "quizOutput"
-        );
+    const percentage = currentQuizTotal > 0
+        ? Math.round((currentQuizCorrect / currentQuizTotal) * 100)
+        : 0;
 
-
-    if (!output) {
-
-        return;
-
+    let feedbackMsg = "Mastery Demonstrated! Outstanding grasp of the material.";
+    if (percentage < 50) {
+        feedbackMsg = "Needs Revision. Review the concepts below to solidify your understanding.";
+    } else if (percentage < 80) {
+        feedbackMsg = "Good Foundation! A few concepts need a quick review.";
     }
 
+    const summaryCard = document.createElement("div");
+    summaryCard.className = "quiz-summary-card";
 
-    const percentage =
+    let summaryHtml = `
+        <div class="quiz-score-circle">${percentage}%</div>
+        <h3>Score: ${currentQuizCorrect} / ${currentQuizTotal} Questions</h3>
+        <p class="quiz-feedback-text">${escapeHTML(feedbackMsg)}</p>
+    `;
 
-        currentQuizTotal > 0
+    if (missedConcepts.length > 0) {
+        summaryHtml += `
+            <div style="margin-top: 18px;">
+                <strong style="color: #cbd5e1; font-size: 13px;">CONCEPTS RECOMMENDED FOR REVISION:</strong>
+                <div class="concepts-to-revise">
+                    ${missedConcepts.map(c => `<span class="concept-pill">📖 ${escapeHTML(c)}</span>`).join("")}
+                </div>
+            </div>
+        `;
+    }
 
-            ? Math.round(
-                (
-                    currentQuizCorrect /
-                    currentQuizTotal
-                ) * 100
-            )
-
-            : 0;
-
-
-    const result =
-        document.createElement(
-            "div"
-        );
-
-
-    result.className =
-        "quiz-result";
-
-
-    result.innerHTML =
-
-        "<strong>" +
-
-        percentage +
-
-        "%</strong>" +
-
-        "<span>" +
-
-        "You scored " +
-
-        currentQuizCorrect +
-
-        " out of " +
-
-        currentQuizTotal +
-
-        "</span>";
-
-
-    output.appendChild(
-        result
-    );
-
+    summaryCard.innerHTML = summaryHtml;
+    output.appendChild(summaryCard);
+    summaryCard.scrollIntoView({ behavior: "smooth" });
 }
 
 
 // ============================================================
 // FORMAT AI TEXT
 // ============================================================
+
+function copyCode(button) {
+    if (!button) return;
+    const pre = button.closest(".code-block");
+    if (!pre) return;
+    const code = pre.querySelector("code");
+    if (!code) return;
+    navigator.clipboard.writeText(code.innerText).then(() => {
+        const originalText = button.textContent;
+        button.textContent = "Copied!";
+        button.style.background = "var(--emerald)";
+        button.style.color = "#000";
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.style.background = "";
+            button.style.color = "";
+        }, 1800);
+    }).catch(err => {
+        console.error("Copy failed", err);
+    });
+}
 
 function formatText(text) {
     if (!text) {
@@ -1960,15 +1827,27 @@ function formatText(text) {
     // Inline code
     formatted = formatted.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
 
-    // Headings
+    // Pedagogical numbered sections: # 1. Intuition & Mental Model
+    formatted = formatted.replace(/^#\s+(\d+)\.\s+(.*?)$/gm, '<div class="lesson-section-badge"><span class="section-num">$1</span><h2 class="lesson-section-title">$2</h2></div>');
+
+    // Standard headings
+    formatted = formatted.replace(/^#### (.*)$/gm, '<h4 class="lesson-subheading">$1</h4>');
     formatted = formatted.replace(/^### (.*)$/gm, '<h3 class="lesson-heading">$1</h3>');
     formatted = formatted.replace(/^## (.*)$/gm, '<h2 class="lesson-heading">$1</h2>');
-    formatted = formatted.replace(/^# (.*)$/gm, '<h1 class="lesson-heading">$1</h1>');
+    formatted = formatted.replace(/^# (.*)$/gm, '<h1 class="lesson-title">$1</h1>');
 
-    // Numbered ARC sections
+    // Callout boxes from blockquotes (e.g. > [!NOTE], > [!WARNING], > 💡, etc.)
     formatted = formatted.replace(
-        /^(\d+)\.\s+(Introduction|Core Concept|Detailed Explanation|Simple Example|Important Points|Quick Revision)\s*$/gm,
-        '<h2 class="lesson-section">$1. $2</h2>'
+        /(?:^|\n)&gt;\s*\[!(?:NOTE|INFO)\]\s*(.*?)(?=(?:\n\n|\n(?!&gt;)|$))/gis,
+        '<div class="callout callout-intuition"><div class="callout-icon">💡</div><div class="callout-body">$1</div></div>'
+    );
+    formatted = formatted.replace(
+        /(?:^|\n)&gt;\s*\[!(?:WARNING|CAUTION)\]\s*(.*?)(?=(?:\n\n|\n(?!&gt;)|$))/gis,
+        '<div class="callout callout-warning"><div class="callout-icon">⚠️</div><div class="callout-body">$1</div></div>'
+    );
+    formatted = formatted.replace(
+        /(?:^|\n)&gt;\s*\[!(?:TIP|EXAMPLE)\]\s*(.*?)(?=(?:\n\n|\n(?!&gt;)|$))/gis,
+        '<div class="callout callout-example"><div class="callout-icon">📝</div><div class="callout-body">$1</div></div>'
     );
 
     // Bold
@@ -1981,26 +1860,23 @@ function formatText(text) {
     formatted = formatted.replace(/^\s*[-*]\s+(.*)$/gm, "<li>$1</li>");
 
     // Numbered lists
-    formatted = formatted.replace(
-        /^\s*\d+\.\s+(?!Introduction|Core Concept|Detailed Explanation|Simple Example|Important Points|Quick Revision)(.*)$/gm,
-        "<li>$1</li>"
-    );
+    formatted = formatted.replace(/^\s*(\d+)\.\s+(.*)$/gm, "<li>$2</li>");
 
     // Consecutive list items to ul
     formatted = formatted.replace(/(<li>.*?<\/li>\s*)+/gs, function(match) {
-        return "<ul>" + match + "</ul>";
+        return "<ul class=\"lesson-list\">" + match + "</ul>";
     });
 
     // Paragraph breaks
     formatted = formatted.replace(/\n{2,}/g, "</p><p>");
     formatted = formatted.replace(/\n/g, "<br>");
 
-    // Re-insert styled code blocks
+    // Re-insert styled code blocks with copy button
     codeBlocks.forEach(function(item, idx) {
         const placeholder = "___CODE_BLOCK_" + idx + "___";
         const codeHtml =
             '<pre class="code-block">' +
-            '<div class="code-header"><span>' + escapeHTML(item.lang) + '</span></div>' +
+            '<div class="code-header"><span>' + escapeHTML(item.lang) + '</span><button class="copy-code-btn" onclick="copyCode(this)">Copy</button></div>' +
             '<code>' + escapeHTML(item.code) + '</code>' +
             '</pre>';
         formatted = formatted.replace(placeholder, codeHtml);
@@ -2702,10 +2578,8 @@ async function sendARC0FromUI() {
                     },
 
                     body: JSON.stringify({
-
-                        question:
-                            question
-
+                        question: question,
+                        history: arc0History.slice(-6)
                     })
 
                 }
@@ -2858,6 +2732,9 @@ async function sendARC0FromUI() {
                 );
 
         }
+
+        arc0History.push({ role: "user", content: question });
+        arc0History.push({ role: "assistant", content: answer });
 
 
     } catch (error) {

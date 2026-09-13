@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -7,7 +8,9 @@ from app.services.ai_manager import (
     ask_ai,
     ask_ai_stream
 )
+from app.services.pedagogical_fallback import generate_fallback_lesson
 
+logger = logging.getLogger("arc_learns.teach")
 router = APIRouter()
 
 
@@ -47,7 +50,7 @@ def validate_length(value):
 
 def prepare_context(results):
 
-    useful_results = results[:5]
+    useful_results = results[:8]
 
     context_parts = []
 
@@ -58,10 +61,9 @@ def prepare_context(results):
                 str(result)
             )
 
-    context = "\n\n".join(context_parts)
+    context = "\n\n---\n\n".join(context_parts)
 
-    # Keep prompt reasonably small
-    MAX_CONTEXT_CHARS = 16000
+    MAX_CONTEXT_CHARS = 18000
 
     if len(context) > MAX_CONTEXT_CHARS:
 
@@ -71,101 +73,93 @@ def prepare_context(results):
 
 
 # ============================================================
-# BUILD TEACHING PROMPT
+# BUILD TEACHING PROMPT (PEDAGOGICAL MASTERCLASS ENGINE)
 # ============================================================
 
 def build_teach_prompt(
-    topic,
-    length,
-    context
-):
+    topic: str,
+    length: str,
+    context: str
+) -> str:
 
     if length == "short":
-
-        length_instruction = """
-Create a SHORT lesson.
-
-Keep it concise.
-Explain only the most important concepts.
-Use short paragraphs and a few bullet points.
-Do not over-explain.
+        depth_guide = """
+DEPTH LEVEL: FOCUSED / HIGH-YIELD LESSON
+- Provide a clear, punchy, high-yield lesson that immediately builds deep comprehension.
+- Focus on the core intuition, mechanical essence, a crisp worked example or formula breakdown, the primary pitfall to avoid, and essential memory anchors.
+- Thorough and explanatory, never a shallow bullet list.
 """
-
     elif length == "long":
-
-        length_instruction = """
-Create a LONG lesson.
-
-Explain the important concepts thoroughly.
-Cover the topic step by step.
-Include useful relationships and examples only when
-supported by the study material.
-Do not repeat the same idea unnecessarily.
+        depth_guide = """
+DEPTH LEVEL: COMPREHENSIVE MASTERCLASS CHAPTER
+- Deliver an exhaustive, textbook-grade chapter covering every dimension of the topic found in the study material.
+- Break down the theoretical grounding, underlying mechanics, step-by-step mathematical derivations or full code implementations with line-by-line breakdown, edge cases, trade-offs, multiple common student misconceptions, and rigorous practice problems.
+- Write in deep, engaging explanatory prose with rich structural organization.
+"""
+    else:  # medium
+        depth_guide = """
+DEPTH LEVEL: IN-DEPTH TUTORIAL
+- Deliver a comprehensive, well-paced tutorial that guides the student from fundamental intuition to technical mastery.
+- Provide clear narrative progression, rigorous conceptual explanation, a complete worked example or code demonstration, common pitfalls, and active-recall questions.
+- Balance depth with clarity.
 """
 
-    else:
+    prompt = f"""You are the ARC LEARN AI Teacher, an elite, patient, and deeply knowledgeable personal educator.
 
-        length_instruction = """
-Create a MEDIUM lesson.
+Your mission is to transform the provided study material into an engaging, structured, and deep masterclass lesson for the student.
 
-Give a balanced explanation.
-Cover the important concepts clearly.
-Do not make the answer unnecessarily long.
-"""
-
-    prompt = f"""
-You are ARC LEARNS, an AI Teacher.
-
-Teach the student using ONLY the study material below.
-
-Topic:
+TOPIC TO TEACH:
 {topic}
 
-Length:
+LESSON DEPTH:
 {length.upper()}
 
-Study Material:
+STUDY MATERIAL:
 {context}
 
-{length_instruction}
+{depth_guide}
 
-Use this structure:
+PEDAGOGICAL INSTRUCTIONS & STRUCTURE:
+Structure your lesson using clear Markdown headings (# and ##), formatted code blocks or mathematical formulations, and callouts:
 
-# Introduction
+# 1. Intuition & Mental Model
+- Hook the student with an intuitive mental model, real-world analogy, or clear motivation explaining WHY this concept exists and what problem it solves.
+- Connect it to fundamental principles before diving into technicalities.
 
-Briefly explain the topic.
+# 2. Formal Concepts & Theoretical Foundation
+- Define key terms, core principles, equations, theorems, or data structures with precision.
+- Ground your explanation strictly in the provided study material.
+- If mathematical or algorithmic, state equations clearly (using standard LaTeX or clean text math).
 
-# Core Concept
+# 3. Step-by-Step Mechanical Breakdown
+- Walk through how this concept or system actually works under the hood.
+- Detail the progression: What happens first? What are the inputs, transformations, internal state changes, and outputs?
+- If applicable, describe architecture or flow step-by-step.
 
-Explain the main ideas.
+# 4. Deep Worked Example & Practical Walkthrough
+- Provide a concrete, fully worked-out example based on the topic:
+  * For Programming/CS: Write clean, runnable code with input/output and a line-by-line walkthrough explaining key operations and time/space complexity.
+  * For Math/Physics: Provide a step-by-step numerical calculation or algebraic derivation showing every intermediate step.
+  * For Science/Engineering: Detail the step-by-step mechanism or chemical/physical process.
+  * For Humanities/Business/Other: Walk through a concrete case study or realistic scenario application.
 
-# Detailed Explanation
+# 5. Common Misconceptions & Traps
+- Address 2 to 3 specific areas where students or practitioners frequently get confused or make errors.
+- Clearly explain WHY the misconception is wrong and how to think about it correctly.
+- Discuss important edge cases or limitations.
 
-Explain the topic according to the requested length.
+# 6. Key Takeaways & Mental Anchors
+- Provide a high-impact summary of the 3-5 core takeaways that the student must remember.
+- Provide a memorable rule of thumb or memory anchor.
 
-# Simple Example
+# 7. Knowledge Check & Reflection
+- Provide 2-3 targeted active-recall reflection questions or mini-exercises (with brief answers or hints labeled) so the student can self-evaluate their grasp.
 
-Give an example only if supported by the study material.
-
-# Important Points
-
-List the key points.
-
-# Quick Revision
-
-Give a short revision summary.
-
-Rules:
-
-- Use ONLY the study material.
-- Do not invent facts.
-- Do not add unrelated information.
-- Use simple student-friendly language.
-- Avoid unnecessary repetition.
-- Follow the requested length.
-- Short = concise.
-- Medium = balanced.
-- Long = detailed.
+STRICT GROUNDING & TEACHING RULES:
+1. Base all factual information strictly on the provided study material. Do NOT invent facts or hallucinate external information not present in the notes.
+2. Use engaging, encouraging, and pedagogically sound language. Speak directly to the student ("Notice that...", "Let's examine why...", "A common mistake here is...").
+3. DO NOT output lazy 2-line bullet summaries. Deliver a real educational experience with genuine explanatory depth.
+4. Format all headings, code blocks (```language), bold text, and lists cleanly in standard Markdown.
 """
 
     return prompt
@@ -209,11 +203,15 @@ def teach_topic(data: TeachRequest):
         context
     )
 
-    lesson = ask_ai(
-        "",
-        prompt,
-        use_web_search=False
-    )
+    try:
+        lesson = ask_ai(
+            "",
+            prompt,
+            use_web_search=False
+        )
+    except Exception as e:
+        logger.warning("Cloud AI provider offline/rate-limited (%s). Synthesizing grounded pedagogical lesson.", e)
+        lesson = generate_fallback_lesson(data.topic, length, results)
 
     return {
         "topic": data.topic,
@@ -236,22 +234,16 @@ def teach_topic_stream(
         data.length
     )
 
-    # --------------------------------------------------------
-    # Retrieve study material
-    # --------------------------------------------------------
-
     results = search(
         data.topic
     )
 
     if not results:
-
         message = (
             "I couldn't find enough information "
             "about this topic in the uploaded "
             "study material."
         )
-
         return StreamingResponse(
             iter([message]),
             media_type="text/plain; charset=utf-8",
@@ -261,17 +253,9 @@ def teach_topic_stream(
             }
         )
 
-    # --------------------------------------------------------
-    # Prepare context
-    # --------------------------------------------------------
-
     context = prepare_context(
         results
     )
-
-    # --------------------------------------------------------
-    # Build prompt
-    # --------------------------------------------------------
 
     prompt = build_teach_prompt(
         data.topic,
@@ -279,22 +263,20 @@ def teach_topic_stream(
         context
     )
 
-    # --------------------------------------------------------
-    # Start streaming
-    # --------------------------------------------------------
-
-    stream = ask_ai_stream(
-        "",
-        prompt,
-        use_web_search=False
-    )
-
-    # --------------------------------------------------------
-    # Return stream
-    # --------------------------------------------------------
+    def stream_with_fallback():
+        try:
+            tokens_count = 0
+            for chunk in ask_ai_stream("", prompt, use_web_search=False):
+                tokens_count += 1
+                yield chunk
+        except Exception as e:
+            logger.warning("Streaming AI failed (%s), yielding grounded pedagogical lesson.", e)
+            if tokens_count == 0:
+                fallback_lesson = generate_fallback_lesson(data.topic, length, results)
+                yield fallback_lesson
 
     return StreamingResponse(
-        stream,
+        stream_with_fallback(),
         media_type="text/plain; charset=utf-8",
         headers={
             "Cache-Control": "no-cache, no-transform",
