@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ARC LEARN | AI-Powered Personalized Learning Platform</title>
-    <link rel="stylesheet" href="style.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="style.css?v=20260913_v4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -435,13 +438,13 @@
             <button class="pill-chip" onclick="quickFillTeach('Distributed Hash Tables & Consistent Hashing')">🌐 Consistent Hashing</button>
         </div>
         <div class="teacher-box">
-            <input type="text" id="teachTopicDirect" placeholder="Example: Transformers and Attention Mechanism">
+            <input type="text" id="teachTopicDirect" placeholder="Example: Transformers and Attention Mechanism" onkeydown="if(event.key==='Enter') teachTopicDirect()">
             <select id="teachLengthDirect">
                 <option value="short">Short (High-Yield)</option>
                 <option value="medium" selected>Medium (In-Depth)</option>
                 <option value="long">Deep (Masterclass)</option>
             </select>
-            <button class="primary-btn" onclick="teachTopicDirect()">
+            <button class="primary-btn" id="teachBtnDirect" onclick="teachTopicDirect()">
                 <span>Teach Me ⚡</span>
             </button>
         </div>
@@ -481,7 +484,7 @@
             </div>
             <div class="chat-input">
                 <input type="text" id="chatQuestionDirect" placeholder="Ask a question about your study material..." onkeydown="handleChatKeyDirect(event)">
-                <button class="send-btn" onclick="sendChatDirect()">→</button>
+                <button class="send-btn" id="chatSendBtnDirect" onclick="sendChatDirect()">→</button>
             </div>
         </div>
     </section>
@@ -514,7 +517,7 @@
             </div>
             <div class="chat-input">
                 <input type="text" id="arc0QuestionDirect" placeholder="Ask ARC Zero anything..." onkeydown="handleARC0KeyDirect(event)">
-                <button class="send-btn" onclick="sendARC0Direct()">→</button>
+                <button class="send-btn" id="arc0SendBtnDirect" onclick="sendARC0Direct()">→</button>
             </div>
         </div>
     </section>
@@ -536,9 +539,9 @@
             <button class="pill-chip" onclick="quickFillQuiz('Dijkstra Shortest Path Algorithm')">📊 Shortest Paths</button>
         </div>
         <div class="quiz-start">
-            <input type="text" id="quizTopicDirect" placeholder="Topic for quiz...">
+            <input type="text" id="quizTopicDirect" placeholder="Topic for quiz..." onkeydown="if(event.key==='Enter') generateQuizDirect()">
             <input type="number" id="quizCountDirect" min="1" max="25" value="5" placeholder="Count">
-            <button class="primary-btn" onclick="generateQuizDirect()">
+            <button class="primary-btn" id="quizBtnDirect" onclick="generateQuizDirect()">
                 <span>Generate Quiz ⚡</span>
             </button>
         </div>
@@ -555,6 +558,6 @@
 
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-<script src="script.js"></script>
+<script src="script.js?v=20260913_v4"></script>
 </body>
 </html>

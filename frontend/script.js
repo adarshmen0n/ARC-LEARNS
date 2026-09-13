@@ -84,6 +84,8 @@ let isChatting = false;
 
 let isGeneratingQuiz = false;
 
+let isARC0Busy = false;
+
 
 
 // ============================================================
@@ -2408,14 +2410,92 @@ function initCyberCanvas() {
     requestAnimationFrame(render);
 }
 
+// ============================================================
+// DIRECT SECTION EVENT ATTACHMENTS & GLOBAL EXPORTS
+// ============================================================
+
+function attachDirectActionListeners() {
+    // 1. ARC Zero
+    const arc0Btn = document.getElementById("arc0SendBtnDirect");
+    if (arc0Btn) arc0Btn.onclick = (e) => { e.preventDefault(); sendARC0FromUI(); };
+    const arc0In = document.getElementById("arc0QuestionDirect");
+    if (arc0In) {
+        arc0In.onkeydown = (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendARC0FromUI();
+            }
+        };
+    }
+
+    // 2. Ask AI
+    const chatBtn = document.getElementById("chatSendBtnDirect");
+    if (chatBtn) chatBtn.onclick = (e) => { e.preventDefault(); sendChat(); };
+    const chatIn = document.getElementById("chatQuestionDirect");
+    if (chatIn) {
+        chatIn.onkeydown = (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendChat();
+            }
+        };
+    }
+
+    // 3. AI Teacher
+    const teachBtn = document.getElementById("teachBtnDirect");
+    if (teachBtn) teachBtn.onclick = (e) => { e.preventDefault(); teachTopic(); };
+    const teachIn = document.getElementById("teachTopicDirect");
+    if (teachIn) {
+        teachIn.onkeydown = (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                teachTopic();
+            }
+        };
+    }
+
+    // 4. Turbo Quiz
+    const quizBtn = document.getElementById("quizBtnDirect");
+    if (quizBtn) quizBtn.onclick = (e) => { e.preventDefault(); generateQuiz(); };
+    const quizIn = document.getElementById("quizTopicDirect");
+    if (quizIn) {
+        quizIn.onkeydown = (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                generateQuiz();
+            }
+        };
+    }
+}
+
+// Expose all UI entrypoints globally on window
+window.sendARC0FromUI = sendARC0FromUI;
+window.sendARC0Direct = sendARC0Direct;
+window.handleARC0KeyDirect = handleARC0KeyDirect;
+window.sendChat = sendChat;
+window.sendChatDirect = sendChatDirect;
+window.handleChatKeyDirect = handleChatKeyDirect;
+window.teachTopic = teachTopic;
+window.teachTopicDirect = teachTopicDirect;
+window.generateQuiz = generateQuiz;
+window.generateQuizDirect = generateQuizDirect;
+window.quickFillARC0 = quickFillARC0;
+window.quickFillChat = quickFillChat;
+window.quickFillTeach = quickFillTeach;
+window.quickFillQuiz = quickFillQuiz;
+window.copyLessonText = copyLessonText;
+window.showSection = showSection;
+
 // Auto-run on DOM ready
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
         initCyberCanvas();
         fetchProviderStatus();
+        attachDirectActionListeners();
     });
 } else {
     initCyberCanvas();
     fetchProviderStatus();
+    attachDirectActionListeners();
 }
 

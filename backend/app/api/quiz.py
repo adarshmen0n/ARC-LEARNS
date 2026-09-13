@@ -227,6 +227,15 @@ def generate_quiz(
     data: QuizRequest
 ):
 
+    topic = data.topic.strip()
+    if not topic:
+        return {
+            "topic": "",
+            "number_of_questions": 0,
+            "quiz": [],
+            "message": "Please specify a topic for the quiz."
+        }
+
     # ========================================================
     # VALIDATE QUESTION COUNT
     # ========================================================
@@ -239,58 +248,31 @@ def generate_quiz(
         )
     )
 
-
     # ========================================================
     # SEARCH STUDY MATERIAL
     # ========================================================
 
     results = search(
-        data.topic
+        topic
     )
 
-
-    if not results:
-
-        return {
-
-            "topic":
-                data.topic,
-
-            "number_of_questions":
-                number_of_questions,
-
-            "quiz":
-                [],
-
-            "message":
-                (
-                    "I couldn't find enough "
-                    "information in the uploaded "
-                    "study material."
-                )
-
-        }
-
-
-    # ========================================================
-    # PREPARE CONTEXT
-    # ========================================================
-
-    context = prepare_context(
-        results
-    )
-
+    if results:
+        context = prepare_context(results)
+    else:
+        context = (
+            f"Authoritative technical and academic foundations of '{topic}'. "
+            "Generate rigorous, accurate conceptual multiple-choice questions from first principles."
+        )
 
     # ========================================================
     # CREATE PROMPT
     # ========================================================
 
     prompt = build_quiz_prompt(
-        data.topic,
+        topic,
         number_of_questions,
         context
     )
-
 
     # ========================================================
     # ASK AI WITH RESILIENT FALLBACK
@@ -318,14 +300,14 @@ def generate_quiz(
     # If AI returned malformed JSON or empty quiz, synthesize grounded questions
     if not quiz:
         quiz = generate_fallback_quiz(
-            data.topic,
+            topic,
             number_of_questions,
-            results
+            results or []
         )
 
     return {
-        "topic": data.topic,
+        "topic": topic,
         "number_of_questions": len(quiz),
         "quiz": quiz,
-        "source_chunks": results
+        "source_chunks": results or []
     }

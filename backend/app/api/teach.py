@@ -172,33 +172,34 @@ STRICT GROUNDING & TEACHING RULES:
 @router.post("/teach")
 def teach_topic(data: TeachRequest):
 
+    topic = data.topic.strip()
+    if not topic:
+        return {
+            "topic": "",
+            "length": "medium",
+            "lesson": "Please specify a topic you would like to master.",
+            "source_chunks": []
+        }
+
     length = validate_length(
         data.length
     )
 
     results = search(
-        data.topic
+        topic
     )
 
-    if not results:
-
-        return {
-            "topic": data.topic,
-            "length": length,
-            "lesson": (
-                "I couldn't find enough information "
-                "about this topic in the uploaded "
-                "study material."
-            ),
-            "source_chunks": []
-        }
-
-    context = prepare_context(
-        results
-    )
+    if results:
+        context = prepare_context(results)
+    else:
+        context = (
+            "No specific user study material is loaded for this topic. "
+            "Formulate an elite, rigorous masterclass curriculum from first principles "
+            "based on authoritative computer science, mathematics, and engineering foundations."
+        )
 
     prompt = build_teach_prompt(
-        data.topic,
+        topic,
         length,
         context
     )
@@ -211,13 +212,13 @@ def teach_topic(data: TeachRequest):
         )
     except Exception as e:
         logger.warning("Cloud AI provider offline/rate-limited (%s). Synthesizing grounded pedagogical lesson.", e)
-        lesson = generate_fallback_lesson(data.topic, length, results)
+        lesson = generate_fallback_lesson(topic, length, results or [])
 
     return {
-        "topic": data.topic,
+        "topic": topic,
         "length": length,
         "lesson": lesson,
-        "source_chunks": results
+        "source_chunks": results or []
     }
 
 
@@ -230,49 +231,47 @@ def teach_topic_stream(
     data: TeachRequest
 ):
 
+    topic = data.topic.strip()
+    if not topic:
+        return StreamingResponse(
+            iter(["Please specify a topic to begin learning."]),
+            media_type="text/plain; charset=utf-8",
+            headers={"Cache-Control": "no-cache"}
+        )
+
     length = validate_length(
         data.length
     )
 
     results = search(
-        data.topic
+        topic
     )
 
-    if not results:
-        message = (
-            "I couldn't find enough information "
-            "about this topic in the uploaded "
-            "study material."
+    if results:
+        context = prepare_context(results)
+    else:
+        context = (
+            "No specific user study material is loaded for this topic. "
+            "Formulate an elite, rigorous masterclass curriculum from first principles "
+            "based on authoritative computer science, mathematics, and engineering foundations."
         )
-        return StreamingResponse(
-            iter([message]),
-            media_type="text/plain; charset=utf-8",
-            headers={
-                "Cache-Control": "no-cache",
-                "X-Accel-Buffering": "no"
-            }
-        )
-
-    context = prepare_context(
-        results
-    )
 
     prompt = build_teach_prompt(
-        data.topic,
+        topic,
         length,
         context
     )
 
     def stream_with_fallback():
+        tokens_count = 0
         try:
-            tokens_count = 0
             for chunk in ask_ai_stream("", prompt, use_web_search=False):
                 tokens_count += 1
                 yield chunk
         except Exception as e:
             logger.warning("Streaming AI failed (%s), yielding grounded pedagogical lesson.", e)
             if tokens_count == 0:
-                fallback_lesson = generate_fallback_lesson(data.topic, length, results)
+                fallback_lesson = generate_fallback_lesson(topic, length, results or [])
                 yield fallback_lesson
 
     return StreamingResponse(
