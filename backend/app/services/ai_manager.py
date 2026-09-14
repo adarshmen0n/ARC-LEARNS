@@ -10,6 +10,7 @@ Guarantees 100% uptime with zero single points of failure.
 """
 
 import logging
+import time
 from typing import Any, Dict, Generator, List, Optional
 
 from .gemini_service import call_gemini, call_gemini_stream, get_gemini_key
@@ -19,8 +20,19 @@ from .openrouter_service import (
     ask_openrouter_stream,
     get_openrouter_key,
 )
+from .web_search import build_grounded_arc0_prompt
 
 logger = logging.getLogger("arc_learns.ai_manager")
+
+# Provider circuit breaker / cooldown cache (e.g. avoid repeated 429 delays)
+_provider_cooldowns: Dict[str, float] = {}
+
+def is_provider_available(provider_name: str) -> bool:
+    return time.time() > _provider_cooldowns.get(provider_name, 0.0)
+
+def set_provider_cooldown(provider_name: str, seconds: float = 60.0):
+    _provider_cooldowns[provider_name] = time.time() + seconds
+
 
 
 def build_unified_messages(
@@ -187,7 +199,7 @@ def ask_ai_stream(
 
 
 # ============================================================
-# ARC ZERO UNIVERSAL INTELLIGENCE
+# ARC ZERO UNIVERSAL INTELLIGENCE & REAL-TIME ENGINE
 # ============================================================
 
 def ask_arc0(
@@ -195,32 +207,31 @@ def ask_arc0(
     history: Optional[List[Dict[str, str]]] = None,
     max_tokens: int = 2500,
 ) -> str:
-    """Universal general intelligence query through Multi-Provider waterfall."""
-    system_role = (
-        "You are ARC ZERO, an autonomous general artificial intelligence assistant "
-        "designed for deep technical analysis, programming, mathematics, and complex reasoning."
-    )
+    """Universal general intelligence query through Multi-Provider waterfall with live 2026 grounding."""
+    system_role = build_grounded_arc0_prompt(question)
     messages = build_unified_messages("", question, history, system_role=system_role)
     last_error: Optional[Exception] = None
 
-    # Tier 1: Gemini
-    if get_gemini_key():
-        try:
-            return call_gemini(messages, max_tokens=max_tokens)
-        except Exception as e:
-            last_error = e
-            logger.warning("ARC0 Tier 1 (Gemini) failed (%s)...", e)
-
-    # Tier 2: Groq
-    if get_groq_key():
+    # Tier 1 (High-Speed LPU): Groq Cloud (sub-second response, 300-500 tok/s)
+    if get_groq_key() and is_provider_available("groq"):
         try:
             return call_groq(messages, max_tokens=max_tokens)
         except Exception as e:
             last_error = e
-            logger.warning("ARC0 Tier 2 (Groq) failed (%s)...", e)
+            logger.warning("ARC0 Tier 1 (Groq) failed (%s), trying Gemini...", e)
+
+    # Tier 2: Gemini
+    if get_gemini_key() and is_provider_available("gemini"):
+        try:
+            return call_gemini(messages, max_tokens=max_tokens)
+        except Exception as e:
+            last_error = e
+            if "429" in str(e) or "quota" in str(e).lower():
+                set_provider_cooldown("gemini", 60.0)
+            logger.warning("ARC0 Tier 2 (Gemini) failed (%s), trying OpenRouter...", e)
 
     # Tier 3: OpenRouter
-    if get_openrouter_key():
+    if get_openrouter_key() and is_provider_available("openrouter"):
         try:
             from .openrouter_service import call_llm_with_fallback
             return call_llm_with_fallback(messages, max_tokens=max_tokens)
@@ -240,29 +251,13 @@ def ask_arc0_stream(
     history: Optional[List[Dict[str, str]]] = None,
     max_tokens: int = 2500,
 ) -> Generator[str, None, None]:
-    """Streaming ARC Zero intelligence through Multi-Provider waterfall."""
-    system_role = (
-        "You are ARC ZERO, an autonomous general artificial intelligence assistant "
-        "designed for deep technical analysis, programming, mathematics, and complex reasoning."
-    )
+    """Streaming ARC Zero intelligence through Multi-Provider waterfall with live 2026 grounding."""
+    system_role = build_grounded_arc0_prompt(question)
     messages = build_unified_messages("", question, history, system_role=system_role)
     last_error: Optional[Exception] = None
 
-    # Tier 1: Gemini
-    if get_gemini_key():
-        try:
-            yielded = False
-            for chunk in call_gemini_stream(messages, max_tokens=max_tokens):
-                yielded = True
-                yield chunk
-            if yielded:
-                return
-        except Exception as e:
-            last_error = e
-            logger.warning("ARC0 Stream Tier 1 (Gemini) failed (%s)...", e)
-
-    # Tier 2: Groq
-    if get_groq_key():
+    # Tier 1 (High-Speed LPU): Groq Cloud (first token < 0.8s)
+    if get_groq_key() and is_provider_available("groq"):
         try:
             yielded = False
             for chunk in call_groq_stream(messages, max_tokens=max_tokens):
@@ -272,10 +267,25 @@ def ask_arc0_stream(
                 return
         except Exception as e:
             last_error = e
-            logger.warning("ARC0 Stream Tier 2 (Groq) failed (%s)...", e)
+            logger.warning("ARC0 Stream Tier 1 (Groq) failed (%s), trying Gemini...", e)
+
+    # Tier 2: Gemini
+    if get_gemini_key() and is_provider_available("gemini"):
+        try:
+            yielded = False
+            for chunk in call_gemini_stream(messages, max_tokens=max_tokens):
+                yielded = True
+                yield chunk
+            if yielded:
+                return
+        except Exception as e:
+            last_error = e
+            if "429" in str(e) or "quota" in str(e).lower():
+                set_provider_cooldown("gemini", 60.0)
+            logger.warning("ARC0 Stream Tier 2 (Gemini) failed (%s), trying OpenRouter...", e)
 
     # Tier 3: OpenRouter
-    if get_openrouter_key():
+    if get_openrouter_key() and is_provider_available("openrouter"):
         try:
             from .openrouter_service import call_llm_stream_with_fallback
             yielded = False

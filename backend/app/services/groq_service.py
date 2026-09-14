@@ -8,6 +8,7 @@ Implemented via OpenAI-compatible REST API using HTTPX.
 import json
 import logging
 import os
+import re
 import time
 from typing import Any, Dict, Generator, List, Optional
 from dotenv import load_dotenv
@@ -17,11 +18,20 @@ load_dotenv()
 
 logger = logging.getLogger("arc_learns.groq_service")
 
-# Candidate Groq models in order of priority
+
+def clean_reasoning_tokens(text: str) -> str:
+    """Strip internal thinking/reasoning tags from model outputs."""
+    if not text:
+        return ""
+    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    cleaned = re.sub(r"<think>.*", "", cleaned, flags=re.DOTALL)
+    return cleaned.strip()
+
+# Candidate Groq models in order of priority (qwen3.8-27b delivers < 0.8s latency)
 GROQ_MODELS = [
-    "openai/gpt-oss-20b",
+    "qwen/qwen3.8-27b",
     "qwen/qwen3.6-27b",
-    "groq/compound",
+    "openai/gpt-oss-120b",
 ]
 
 GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
@@ -65,10 +75,12 @@ def call_groq(
 
             if resp.status_code == 200:
                 data = resp.json()
-                content = data["choices"][0]["message"].get("content") or ""
+                raw_content = data["choices"][0]["message"].get("content") or ""
+                content = clean_reasoning_tokens(raw_content)
                 elapsed = time.perf_counter() - start_t
                 logger.info("Generated via Groq (%s) in %.2fs", model, elapsed)
-                return content.strip()
+                if content:
+                    return content.strip()
 
             logger.warning("Groq %s returned %d: %s", model, resp.status_code, resp.text[:120])
         except Exception as e:
