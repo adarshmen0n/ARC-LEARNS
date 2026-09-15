@@ -239,6 +239,11 @@ def ask_arc0(
             last_error = e
             logger.warning("ARC0 Tier 3 (OpenRouter) failed (%s)...", e)
 
+    from .web_search import get_temporal_grounding
+    fact = get_temporal_grounding(question)
+    if fact:
+        return f"**ARC Zero (Real-Time Knowledge):**\n\n{fact}"
+
     return (
         "**ARC Zero Status Notice:**\n\n"
         f"All configured cloud AI endpoints are currently exhausted or rate-limited ({last_error}). "
@@ -297,5 +302,11 @@ def ask_arc0_stream(
         except Exception as e:
             last_error = e
             logger.warning("ARC0 Stream Tier 3 (OpenRouter) failed (%s)...", e)
+
+    from .web_search import get_temporal_grounding
+    fact = get_temporal_grounding(question)
+    if fact:
+        yield f"**ARC Zero (Real-Time Knowledge):**\n\n{fact}"
+        return
 
     raise RuntimeError(f"All ARC0 streaming providers exhausted: {last_error}")
