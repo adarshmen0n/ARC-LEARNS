@@ -25,9 +25,9 @@ function showToast(message, type = "info", duration = 5000) {
         document.body.appendChild(container);
     }
     const icons = {
-        info: "⚡",
+        info: "•",
         success: "✓",
-        warning: "⚠️",
+        warning: "!",
         error: "✕"
     };
     const toast = document.createElement("div");
@@ -213,13 +213,13 @@ function updatePageTitle(sectionId) {
 
 
     const titles = {
-        landing: "ARC LEARN Platform",
-        studio: "Integrated Studio Workspace",
-        learn: "Interactive AI Teacher",
-        chat: "Ask Your Study Material",
-        arc0: "ARC Zero — Universal Intelligence",
-        quiz: "Turbo Assessment Quiz",
-        dashboard: "ARC LEARN Dashboard"
+        landing: "ARC Learn",
+        studio: "Study Workspace",
+        learn: "Guided Learning",
+        chat: "Ask Study Material",
+        arc0: "ARC Zero",
+        quiz: "Practice Quiz",
+        dashboard: "Learning Dashboard"
     };
 
 
@@ -436,27 +436,20 @@ async function uploadPDF() {
 
 
         if (status) {
-
+            status.className = "status-message status-success";
             status.innerHTML =
-
                 "<strong>✓ " +
                 escapeHTML(fileType) +
                 " uploaded successfully</strong>" +
-
                 "<br>File: " +
                 escapeHTML(
                     uploadedFileName
                 ) +
-
                 "<br>Chapters: " +
                 chapters +
-
                 "<br>Chunks: " +
                 chunks;
-
-            status.style.color =
-                "#6ee7aa";
-
+            status.style.color = "";
         }
 
 
@@ -513,30 +506,9 @@ function showStatus(
     }
 
 
-    element.textContent =
-        message;
-
-
-    if (type === "error") {
-
-        element.style.color =
-            "#ff8494";
-
-    }
-
-    else if (type === "loading") {
-
-        element.style.color =
-            "#9c89ff";
-
-    }
-
-    else {
-
-        element.style.color =
-            "#6ee7aa";
-
-    }
+    element.textContent = message;
+    element.className = "status-message " + (type === "error" ? "status-error" : type === "loading" ? "status-loading" : "status-success");
+    element.style.color = "";
 
 }
 
@@ -651,9 +623,9 @@ async function teachTopic() {
     outputs.forEach(out => {
         out.innerHTML = `
             <div class="empty-state">
-                <div class="status-dot-pulse" style="margin: 0 auto 16px auto; width: 24px; height: 24px;"></div>
-                <h3>Synthesizing 7-Stage Masterclass...</h3>
-                <p>Generating deep pedagogical instruction for <strong>${escapeHTML(topic)}</strong>...</p>
+                <div class="status-indicator" style="margin: 0 auto 12px auto; width: 8px; height: 8px;"></div>
+                <h3>Preparing lesson...</h3>
+                <p>Generating structured explanations for <strong>${escapeHTML(topic)}</strong>...</p>
             </div>
         `;
     });
@@ -685,7 +657,7 @@ async function teachTopic() {
                         <div class="lesson-content">
                             <div class="lesson-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
                                 <h2 style="margin: 0;">${escapeHTML(topic)}</h2>
-                                <button class="pill-chip" onclick="copyLessonText(this)">📋 Copy Lesson</button>
+                                <button class="pill-chip" onclick="copyLessonText(this)">Copy Lesson</button>
                             </div>
                             ${formatText(lessonText)}
                         </div>
@@ -719,8 +691,8 @@ async function teachTopic() {
                 <div class="lesson-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">
                     <h2 style="margin: 0;">${escapeHTML(topic)}</h2>
                     <div style="display: flex; gap: 8px;">
-                        <button class="pill-chip" onclick="copyLessonText(this)">📋 Copy Lesson</button>
-                        <button class="pill-chip" onclick="quickFillQuiz('${escapeHTML(topic).replace(/'/g, "\\'")}')">🎯 Test Myself with Quiz</button>
+                        <button class="pill-chip" onclick="copyLessonText(this)">Copy Lesson</button>
+                        <button class="pill-chip" onclick="quickFillQuiz('${escapeHTML(topic).replace(/'/g, "\\'")}')">Practice with Quiz</button>
                     </div>
                 </div>
                 ${formatText(lessonText)}
@@ -1084,9 +1056,9 @@ async function generateQuiz() {
     outputs.forEach(out => {
         out.innerHTML = `
             <div class="empty-state">
-                <div class="status-dot-pulse" style="margin: 0 auto 16px auto; width: 24px; height: 24px;"></div>
-                <h3>Generating Turbo Quiz...</h3>
-                <p>Formulating ${count} interactive questions with distractor analysis for <strong>${escapeHTML(topic)}</strong>...</p>
+                <div class="status-indicator" style="margin: 0 auto 12px auto; width: 8px; height: 8px;"></div>
+                <h3>Generating questions...</h3>
+                <p>Formulating ${count} practice questions for <strong>${escapeHTML(topic)}</strong>...</p>
             </div>
         `;
     });
@@ -2314,17 +2286,19 @@ async function fetchProviderStatus() {
 
         if (primary === "gemini") {
             if (hudPrimary) hudPrimary.textContent = "Google Gemini 3 Flash";
-            if (sidebarStatus) sidebarStatus.textContent = "Google Gemini Active";
-            if (speedDisplay) speedDisplay.textContent = "Speed: ~0.3s (Sub-Second)";
-            if (sidebarSpeed) sidebarSpeed.textContent = "Latency: < 0.3s • 1,500/day Free";
+            if (sidebarStatus) sidebarStatus.textContent = "Gemini 3 Flash";
+            if (speedDisplay) speedDisplay.textContent = "Active";
+            if (sidebarSpeed) sidebarSpeed.textContent = "Low latency mode";
         } else if (primary === "groq") {
-            if (hudPrimary) hudPrimary.textContent = "Groq LPU (500 tok/s)";
-            if (sidebarStatus) sidebarStatus.textContent = "Groq LPU Active";
-            if (speedDisplay) speedDisplay.textContent = "Speed: ~0.2s (Instant)";
-            if (sidebarSpeed) sidebarSpeed.textContent = "Latency: < 0.2s • Ultra-Fast";
+            if (hudPrimary) hudPrimary.textContent = "Groq LPU";
+            if (sidebarStatus) sidebarStatus.textContent = "Groq LPU";
+            if (speedDisplay) speedDisplay.textContent = "Active";
+            if (sidebarSpeed) sidebarSpeed.textContent = "High speed mode";
         } else if (primary === "openrouter") {
-            if (hudPrimary) hudPrimary.textContent = "OpenRouter Multi-Model";
-            if (sidebarStatus) sidebarStatus.textContent = "OpenRouter Active";
+            if (hudPrimary) hudPrimary.textContent = "OpenRouter";
+            if (sidebarStatus) sidebarStatus.textContent = "OpenRouter";
+            if (speedDisplay) speedDisplay.textContent = "Active";
+            if (sidebarSpeed) sidebarSpeed.textContent = "Multi-model fallback";
         }
     } catch (e) {
         console.debug("Could not fetch provider status:", e);
@@ -2332,82 +2306,13 @@ async function fetchProviderStatus() {
 }
 
 // ============================================================
-// CYBERNETIC NEURAL CANVAS ANIMATION
+// CLEAN AESTHETIC CANVAS HANDLER
 // ============================================================
 
 function initCyberCanvas() {
+    // Stripped down to maintain minimal, professional Claude aesthetic
     const canvas = document.getElementById("cyberCanvas");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-
-    window.addEventListener("resize", () => {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-    });
-
-    const particles = [];
-    const count = Math.min(60, Math.floor((width * height) / 25000));
-
-    for (let i = 0; i < count; i++) {
-        particles.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5,
-            radius: Math.random() * 1.8 + 1,
-            color: Math.random() > 0.4 ? "rgba(0, 245, 255, " : "rgba(168, 85, 247, ",
-            alpha: Math.random() * 0.5 + 0.25
-        });
-    }
-
-    function render() {
-        ctx.clearRect(0, 0, width, height);
-
-        // Draw connections
-        for (let i = 0; i < particles.length; i++) {
-            for (let j = i + 1; j < particles.length; j++) {
-                const dx = particles[i].x - particles[j].x;
-                const dy = particles[i].y - particles[j].y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 130) {
-                    const lineAlpha = (1 - dist / 130) * 0.2;
-                    ctx.beginPath();
-                    ctx.strokeStyle = `rgba(0, 245, 255, ${lineAlpha})`;
-                    ctx.lineWidth = 0.8;
-                    ctx.moveTo(particles[i].x, particles[i].y);
-                    ctx.lineTo(particles[j].x, particles[j].y);
-                    ctx.stroke();
-                }
-            }
-        }
-
-        // Draw particles
-        for (let i = 0; i < particles.length; i++) {
-            const p = particles[i];
-            p.x += p.vx;
-            p.y += p.vy;
-
-            if (p.x < 0) p.x = width;
-            if (p.x > width) p.x = 0;
-            if (p.y < 0) p.y = height;
-            if (p.y > height) p.y = 0;
-
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fillStyle = p.color + p.alpha + ")";
-            ctx.shadowColor = p.color + "0.8)";
-            ctx.shadowBlur = 6;
-            ctx.fill();
-        }
-
-        requestAnimationFrame(render);
-    }
-
-    requestAnimationFrame(render);
+    if (canvas) canvas.style.display = "none";
 }
 
 // ============================================================

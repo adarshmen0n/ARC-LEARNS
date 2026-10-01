@@ -3,25 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARC LEARN | AI-Powered Personalized Learning Platform</title>
+    <title>ARC LEARN — Personalized Learning Platform</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="style.css?v=20260913_v4">
+    <link rel="stylesheet" href="style.css?v=20261001_claude">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 
 <body class="arc-theme">
 
-<!-- Futuristic Cybernetic Canvas & Ambient Effects -->
-<canvas id="cyberCanvas" class="cyber-canvas"></canvas>
-<div class="bg-stars"></div>
-<div class="bg-grid-glow"></div>
-<div class="cyber-scanline"></div>
-<div class="glow-orb orb-primary"></div>
-<div class="glow-orb orb-secondary"></div>
+<!-- Canvas retained invisibly so any legacy callers remain safe -->
+<canvas id="cyberCanvas" style="display: none;" aria-hidden="true"></canvas>
 
 <!-- =========================
      SIDEBAR NAVIGATION
@@ -29,39 +24,31 @@
 <aside class="sidebar">
     <div class="logo" onclick="showSection('landing')">
         <div class="logo-icon-wrap">
-            <svg class="arc-logo-svg" viewBox="0 0 40 40" fill="none">
-                <polygon points="20,2 38,12 38,28 20,38 2,28 2,12" stroke="url(#arcGrad)" stroke-width="2.5" fill="rgba(124, 92, 255, 0.12)" />
-                <polygon points="20,8 32,15 32,25 20,32 8,25 8,15" stroke="#00f5ff" stroke-width="1.5" fill="none" opacity="0.8" />
-                <circle cx="20" cy="20" r="4" fill="#00f5ff" filter="drop-shadow(0 0 8px #00f5ff)" />
-                <defs>
-                    <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#00f5ff" />
-                        <stop offset="50%" stop-color="#7c5cff" />
-                        <stop offset="100%" stop-color="#f72585" />
-                    </linearGradient>
-                </defs>
+            <svg class="arc-logo-svg" viewBox="0 0 32 32" fill="none">
+                <rect width="32" height="32" rx="6" fill="#C15F3C"/>
+                <path d="M16 6L24 24H8L16 6Z" fill="#FAF9F5"/>
+                <circle cx="16" cy="18" r="3" fill="#C15F3C"/>
             </svg>
         </div>
         <div class="logo-text">
             <h2>ARC LEARN</h2>
-            <span>AI LEARNING PLATFORM</span>
+            <span>Learning Platform</span>
         </div>
     </div>
 
     <nav class="navigation">
         <button class="nav-item active" onclick="showSection('landing', this)">
             <span class="nav-icon">✦</span>
-            <span class="nav-label">ARC Overview</span>
+            <span class="nav-label">Overview</span>
         </button>
 
         <button class="nav-item" onclick="showSection('studio', this)">
-            <span class="nav-icon">⚡</span>
-            <span class="nav-label">Studio Workspace</span>
-            <span class="pill-badge">ALL-IN-ONE</span>
+            <span class="nav-icon">⊞</span>
+            <span class="nav-label">Workspace</span>
         </button>
 
         <button class="nav-item" onclick="showSection('learn', this)">
-            <span class="nav-icon">📚</span>
+            <span class="nav-icon">📖</span>
             <span class="nav-label">AI Teacher</span>
         </button>
 
@@ -71,22 +58,22 @@
         </button>
 
         <button class="nav-item" onclick="showSection('arc0', this)">
-            <span class="nav-icon">🤖</span>
+            <span class="nav-icon">✧</span>
             <span class="nav-label">ARC Zero</span>
         </button>
 
         <button class="nav-item" onclick="showSection('quiz', this)">
-            <span class="nav-icon">🎯</span>
-            <span class="nav-label">Turbo Quiz</span>
+            <span class="nav-icon">✓</span>
+            <span class="nav-label">Quiz</span>
         </button>
     </nav>
 
     <div class="sidebar-bottom">
         <div class="ai-status">
-            <div class="status-dot-pulse"></div>
+            <div class="status-indicator"></div>
             <div>
-                <strong id="sidebarEngineStatus">Google Gemini Active</strong>
-                <small id="sidebarEngineSpeed">Latency: &lt; 0.3s • 1,500/day Free</small>
+                <strong id="sidebarEngineStatus">Gemini 3 Flash</strong>
+                <small id="sidebarEngineSpeed">Low latency mode</small>
             </div>
         </div>
     </div>
@@ -102,52 +89,47 @@
         <div class="topbar-left">
             <div class="engine-badge">
                 <span class="badge-dot"></span>
-                <span>MULTI-PROVIDER ENGINE ACTIVE</span>
-                <span class="engine-tag" id="engineTag">GEMINI ➔ GROQ ➔ OPENROUTER</span>
+                <span>ENGINE READY</span>
+                <span class="engine-tag" id="engineTag">Gemini • Groq • OpenRouter</span>
             </div>
-            <h1 id="pageTitle">ARC LEARN Platform</h1>
+            <h1 id="pageTitle">ARC Learn</h1>
         </div>
 
         <div class="topbar-right">
             <div class="response-speed-pill" id="speedPill">
-                <span class="lightning-icon">⚡</span>
-                <span class="speed-text" id="speedDisplay">Speed: ~0.3s (Sub-Second)</span>
+                <span class="speed-text" id="speedDisplay">Active</span>
             </div>
 
             <div class="profile">
-                <div class="profile-avatar">A</div>
+                <div class="profile-avatar">AM</div>
                 <div>
                     <strong>Adarsh Menon</strong>
-                    <small>AI Product Architect</small>
+                    <small>Student</small>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- LIVE TELEMETRY HUD STRIP -->
+    <!-- LIVE TELEMETRY BAR -->
     <div class="hud-telemetry-bar">
         <div class="hud-item">
-            <span class="hud-dot live-pulse"></span>
             <span class="hud-label">PRIMARY:</span>
-            <strong id="hudPrimaryProvider" class="hud-val text-cyan">Google Gemini 3 Flash</strong>
+            <strong id="hudPrimaryProvider" class="hud-val">Google Gemini 3 Flash</strong>
         </div>
         <div class="hud-divider"></div>
         <div class="hud-item">
-            <span class="hud-dot ready"></span>
             <span class="hud-label">SECONDARY:</span>
-            <strong id="hudSecondaryProvider" class="hud-val text-purple">Groq LPU (500 tok/s)</strong>
+            <strong id="hudSecondaryProvider" class="hud-val">Groq LPU</strong>
         </div>
         <div class="hud-divider"></div>
         <div class="hud-item">
-            <span class="hud-dot ready"></span>
             <span class="hud-label">CONTEXT:</span>
-            <strong class="hud-val text-gold">1,000,000 Tokens</strong>
+            <strong class="hud-val">1,000,000 Tokens</strong>
         </div>
         <div class="hud-divider"></div>
         <div class="hud-item">
-            <span class="hud-dot ready"></span>
-            <span class="hud-label">RESILIENCE:</span>
-            <strong class="hud-val text-emerald">4-Tier Waterfall Active</strong>
+            <span class="hud-label">ARCHITECTURE:</span>
+            <strong class="hud-val">Resilient Multi-Provider</strong>
         </div>
     </div>
 
@@ -156,83 +138,66 @@
     ==================================================== -->
     <section id="landing" class="section active-section">
         <div class="arc-hero-container">
-            <!-- Center Branding -->
+            <!-- Center Editorial Header -->
             <div class="arc-brand-center">
-                <div class="brand-hologram">
-                    <svg class="hologram-logo" viewBox="0 0 100 100" fill="none">
-                        <circle cx="50" cy="50" r="46" stroke="rgba(124, 92, 255, 0.25)" stroke-dasharray="6 4" />
-                        <circle cx="50" cy="50" r="38" stroke="url(#holoGrad)" stroke-width="2" />
-                        <polygon points="50,16 80,33 80,67 50,84 20,67 20,33" stroke="#00f5ff" stroke-width="2" fill="rgba(0, 245, 255, 0.05)" />
-                        <polygon points="50,26 72,39 72,61 50,74 28,61 28,39" stroke="#a855f7" stroke-width="1.5" fill="rgba(168, 85, 247, 0.1)" />
-                        <circle cx="50" cy="50" r="8" fill="#00f5ff" filter="drop-shadow(0 0 12px #00f5ff)" />
-                        <defs>
-                            <linearGradient id="holoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#00f5ff" />
-                                <stop offset="50%" stop-color="#7c5cff" />
-                                <stop offset="100%" stop-color="#ec4899" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-
-                <span class="hero-chip">AI-POWERED PERSONALIZED LEARNING PLATFORM</span>
+                <span class="hero-chip">Personalized Learning Platform</span>
                 <h1 class="hero-title-arc">
-                    ARC LEARN
+                    Understand your study materials with depth and clarity
                 </h1>
                 <p class="hero-subtitle">
-                    Transforming raw textbooks, slides, and lecture notes into deep 7-stage masterclass lessons,
-                    conversational doubt resolution, and interactive Bloom-taxonomy assessments at sub-second speeds.
+                    Transform textbooks, lecture notes, and research papers into progressive pedagogical chapters,
+                    clear doubts with grounded contextual citations, and test retention with practice quizzes.
                 </p>
 
                 <div class="hero-cta-group">
-                    <button class="primary-btn glow-btn" onclick="showSection('studio')">
-                        <span>Launch Studio Workspace</span>
+                    <button class="primary-btn" onclick="showSection('studio')">
+                        <span>Open Workspace</span>
                         <span class="btn-arrow">→</span>
                     </button>
                     <button class="secondary-btn" onclick="showSection('arc0')">
-                        <span>⚡ Chat with ARC Zero</span>
+                        <span>Ask ARC Zero</span>
                     </button>
                 </div>
 
                 <!-- FAST-LAUNCH TOPIC CHIPS -->
                 <div class="hero-quick-topics">
-                    <span class="quick-topic-title">⚡ FAST-LAUNCH STUDY MASTERCLASSES:</span>
+                    <span class="quick-topic-title">Explore sample topics</span>
                     <div class="topic-chip-container">
                         <button class="topic-chip" onclick="quickLaunchTopic('Neural Networks and Backpropagation')">
-                            <span>🧠 Neural Networks</span>
+                            <span>Neural Networks</span>
                         </button>
                         <button class="topic-chip" onclick="quickLaunchTopic('Transformers & Multi-Head Self-Attention')">
-                            <span>🤖 Transformers & Attention</span>
+                            <span>Transformers & Attention</span>
                         </button>
                         <button class="topic-chip" onclick="quickLaunchTopic('Operating Systems: Mutexes, Semaphores & Concurrency')">
-                            <span>⚙️ OS Concurrency</span>
+                            <span>OS Concurrency</span>
                         </button>
                         <button class="topic-chip" onclick="quickLaunchTopic('Distributed Systems: Raft Consensus Algorithm')">
-                            <span>🌐 Raft Consensus</span>
+                            <span>Raft Consensus</span>
                         </button>
                         <button class="topic-chip" onclick="quickLaunchTopic('Graph Algorithms: Dijkstra and A-Star Pathfinding')">
-                            <span>📊 Graph Algorithms</span>
+                            <span>Graph Algorithms</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- COGNITIVE PLATFORM METRICS -->
+                <!-- PLATFORM CAPABILITIES STRIP -->
                 <div class="platform-metrics-strip">
                     <div class="metric-block">
-                        <span class="metric-num text-cyan">1,000,000</span>
-                        <span class="metric-label">Tokens Context Window</span>
+                        <span class="metric-num">1,000,000</span>
+                        <span class="metric-label">Context Window</span>
                     </div>
                     <div class="metric-block">
-                        <span class="metric-num text-purple">&lt; 0.3s</span>
-                        <span class="metric-label">Inference Latency</span>
+                        <span class="metric-num">&lt; 0.3s</span>
+                        <span class="metric-label">Fast Inference</span>
                     </div>
                     <div class="metric-block">
-                        <span class="metric-num text-gold">4-Tier</span>
-                        <span class="metric-label">Zero-Downtime Waterfall</span>
+                        <span class="metric-num">Grounded</span>
+                        <span class="metric-label">Vector Retrieval</span>
                     </div>
                     <div class="metric-block">
-                        <span class="metric-num text-emerald">100%</span>
-                        <span class="metric-label">Textbook Grounded</span>
+                        <span class="metric-num">Pedagogical</span>
+                        <span class="metric-label">Structured Teaching</span>
                     </div>
                 </div>
             </div>
@@ -240,30 +205,30 @@
             <!-- Feature Showcase Cards -->
             <div class="hero-feature-grid">
                 <div class="hero-feature-card" onclick="showSection('studio')">
-                    <div class="feature-icon cyan-glow">📄</div>
-                    <h3>Multi-Format Ingestion</h3>
-                    <p>Direct parsing for PDF, Word, PPTX, and TXT with paragraph-aware chunking and disk-persisted vector recall.</p>
-                    <span class="feature-link">Open Ingestion Studio →</span>
+                    <div class="feature-icon">📄</div>
+                    <h3>Document Ingestion</h3>
+                    <p>Extract, chunk, and embed PDFs, Word files, and notes for immediate vector recall.</p>
+                    <span class="feature-link">Open Workspace →</span>
                 </div>
 
                 <div class="hero-feature-card" onclick="showSection('learn')">
-                    <div class="feature-icon purple-glow">🎓</div>
-                    <h3>7-Stage AI Masterclass</h3>
-                    <p>Structured pedagogical explanations covering intuition, formal theory, mechanics, worked examples, and pitfalls.</p>
+                    <div class="feature-icon">📖</div>
+                    <h3>AI Guided Teaching</h3>
+                    <p>Read progressive, textbook-quality chapters with intuition, mechanics, worked examples, and pitfalls.</p>
                     <span class="feature-link">Start Lesson →</span>
                 </div>
 
                 <div class="hero-feature-card" onclick="showSection('arc0')">
-                    <div class="feature-icon pink-glow">🤖</div>
-                    <h3>ARC Zero Intelligence</h3>
-                    <p>Universal neural assistant equipped with conversational memory and contemporary technical domain mastery.</p>
+                    <div class="feature-icon">✧</div>
+                    <h3>ARC Zero Assistant</h3>
+                    <p>Consult a universal technical assistant equipped with real-time reasoning and deep knowledge.</p>
                     <span class="feature-link">Ask ARC Zero →</span>
                 </div>
 
                 <div class="hero-feature-card" onclick="showSection('quiz')">
-                    <div class="feature-icon green-glow">🎯</div>
-                    <h3>Turbo Assessment</h3>
-                    <p>Interactive Bloom's-taxonomy quizzes with real-time distractor analysis explaining why wrong choices fail.</p>
+                    <div class="feature-icon">✓</div>
+                    <h3>Practice Assessments</h3>
+                    <p>Test understanding with graded questions accompanied by clear distractor explanations.</p>
                     <span class="feature-link">Generate Quiz →</span>
                 </div>
             </div>
@@ -277,16 +242,16 @@
     <section id="studio" class="section">
         <div class="studio-header">
             <div>
-                <span class="badge">INTEGRATED WORKSPACE</span>
-                <h2>ARC LEARN Studio</h2>
-                <p>Upload your material once, then seamlessly teach, query, converse, and test in one unified space.</p>
+                <span class="badge">Workspace</span>
+                <h2>Study Studio</h2>
+                <p>Upload your material once to teach, query, converse, and assess in a unified workspace.</p>
             </div>
         </div>
 
         <!-- UPLOAD ZONE -->
         <div class="upload-card">
             <div class="upload-icon-box">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -297,12 +262,12 @@
                     <h3>Upload Study Material</h3>
                     <span class="file-badges">PDF • DOCX • PPTX • TXT • CSV</span>
                 </div>
-                <p>Upload lecture notes, research papers, or textbooks. The engine extracts concepts, builds vector embeddings, and enables immediate learning.</p>
+                <p>Upload lecture notes, research papers, or syllabus documents. The system extracts concepts and enables immediate learning.</p>
 
                 <div class="upload-row">
                     <input type="file" id="pdfFile" accept=".pdf,.docx,.pptx,.txt,.csv">
                     <button class="primary-btn" id="uploadBtn" onclick="uploadPDF()">
-                        <span id="uploadBtnText">Process Document ⚡</span>
+                        <span id="uploadBtnText">Process Document</span>
                     </button>
                 </div>
 
@@ -313,16 +278,16 @@
         <!-- STUDIO TABS CONTAINER -->
         <div class="studio-tabs-bar">
             <button class="studio-tab-btn active" onclick="switchStudioTab('studio-teacher', this)">
-                <span>🎓 AI Teacher</span>
+                <span>AI Teacher</span>
             </button>
             <button class="studio-tab-btn" onclick="switchStudioTab('studio-ask', this)">
-                <span>💬 Ask AI (Document)</span>
+                <span>Ask Document</span>
             </button>
             <button class="studio-tab-btn" onclick="switchStudioTab('studio-arc0', this)">
-                <span>🤖 ARC Zero (Universal)</span>
+                <span>ARC Zero</span>
             </button>
             <button class="studio-tab-btn" onclick="switchStudioTab('studio-quiz', this)">
-                <span>🎯 Turbo Quiz</span>
+                <span>Quiz</span>
             </button>
         </div>
 
@@ -330,7 +295,7 @@
         <div id="studio-teacher" class="studio-tab-panel active-tab">
             <div class="panel-intro">
                 <h4>Interactive AI Teacher</h4>
-                <p>Enter any topic from your study material to receive a fast, structured lesson.</p>
+                <p>Enter any topic from your study material to receive a structured lesson.</p>
             </div>
             <div class="teacher-box">
                 <input type="text" id="teachTopic" placeholder="Topic to teach (e.g., Backpropagation, Raft Consensus)...">
@@ -340,14 +305,14 @@
                     <option value="long">Deep</option>
                 </select>
                 <button class="primary-btn" onclick="teachTopic()">
-                    <span>Teach Me ⚡</span>
+                    <span>Teach Topic</span>
                 </button>
             </div>
             <div id="lessonOutput" class="output-card">
                 <div class="empty-state">
                     <div class="empty-icon">📖</div>
                     <h3>Your lesson will appear here</h3>
-                    <p>Enter a topic above to begin streaming.</p>
+                    <p>Enter a topic above to begin reading.</p>
                 </div>
             </div>
         </div>
@@ -356,21 +321,21 @@
         <div id="studio-ask" class="studio-tab-panel">
             <div class="panel-intro">
                 <h4>Ask your Study Material</h4>
-                <p>Ask doubts grounded directly in your uploaded notes.</p>
+                <p>Ask questions grounded directly in your uploaded notes.</p>
             </div>
             <div class="chat-container">
                 <div id="chatMessages" class="chat-messages">
                     <div class="message ai-message">
                         <div class="message-avatar">A</div>
                         <div class="message-content">
-                            <strong>ARC LEARN Tutor</strong>
+                            <strong>ARC Learn Tutor</strong>
                             <p>I am ready. Ask me any question based on your uploaded material.</p>
                         </div>
                     </div>
                 </div>
                 <div class="chat-input">
                     <input type="text" id="chatQuestion" placeholder="Ask a question about your study material..." onkeydown="handleChatKey(event)">
-                    <button class="send-btn" onclick="sendChat()">→</button>
+                    <button class="send-btn" onclick="sendChat()" title="Send">↑</button>
                 </div>
             </div>
         </div>
@@ -378,8 +343,8 @@
         <!-- STUDIO TAB 3: ARC ZERO -->
         <div id="studio-arc0" class="studio-tab-panel">
             <div class="panel-intro">
-                <h4>ARC Zero Universal Intelligence</h4>
-                <p>Ask anything beyond your study material with comprehensive general intelligence.</p>
+                <h4>ARC Zero Universal Assistant</h4>
+                <p>Ask anything beyond your study material with broad technical intelligence.</p>
             </div>
             <div class="chat-container">
                 <div id="arc0Messages" class="chat-messages">
@@ -387,13 +352,13 @@
                         <div class="message-avatar">0</div>
                         <div class="message-content">
                             <strong>ARC Zero</strong>
-                            <p>Hello! I am ARC Zero, your universal cognitive AI. Ask me any inquiry.</p>
+                            <p>Hello! I am ARC Zero, your universal technical assistant. Ask me any question.</p>
                         </div>
                     </div>
                 </div>
                 <div class="chat-input">
                     <input type="text" id="arc0Question" placeholder="Ask ARC Zero anything..." onkeydown="handleARC0Key(event)">
-                    <button class="send-btn" onclick="sendARC0FromUI()">→</button>
+                    <button class="send-btn" onclick="sendARC0FromUI()" title="Send">↑</button>
                 </div>
             </div>
         </div>
@@ -401,19 +366,19 @@
         <!-- STUDIO TAB 4: QUIZ -->
         <div id="studio-quiz" class="studio-tab-panel">
             <div class="panel-intro">
-                <h4>Turbo Knowledge Assessment</h4>
-                <p>Generate difficulty-graded interactive questions with immediate distractor analysis.</p>
+                <h4>Concept Assessment</h4>
+                <p>Generate interactive questions with immediate explanations for each answer.</p>
             </div>
             <div class="quiz-start">
                 <input type="text" id="quizTopic" placeholder="Topic for quiz...">
                 <input type="number" id="quizQuestionCount" min="1" max="25" value="5" placeholder="Count">
                 <button class="primary-btn" onclick="generateQuiz()">
-                    <span>Generate Quiz ⚡</span>
+                    <span>Generate Quiz</span>
                 </button>
             </div>
             <div id="quizOutput" class="quiz-output">
                 <div class="empty-state">
-                    <div class="empty-icon">🎯</div>
+                    <div class="empty-icon">✓</div>
                     <h3>Quiz questions will appear here</h3>
                     <p>Enter a topic above to generate questions.</p>
                 </div>
@@ -426,33 +391,33 @@
     ==================================================== -->
     <section id="learn" class="section">
         <div class="section-intro">
-            <span class="badge">AI TEACHER</span>
-            <h2>Learn with ARC LEARN</h2>
-            <p>Direct access to the 7-stage AI curriculum masterclass teacher.</p>
+            <span class="badge">AI Teacher</span>
+            <h2>Guided Learning</h2>
+            <p>Progressive, pedagogical explanations structured around your study material.</p>
         </div>
         <div class="section-quick-pills">
-            <span class="pills-label">Quick Suggestions:</span>
-            <button class="pill-chip" onclick="quickFillTeach('Neural Networks and Gradient Descent')">🧠 Gradient Descent</button>
-            <button class="pill-chip" onclick="quickFillTeach('Transformers & Self-Attention Mechanics')">🤖 Self-Attention</button>
-            <button class="pill-chip" onclick="quickFillTeach('Concurrency: Mutexes, Locks & Semaphores')">⚙️ OS Concurrency</button>
-            <button class="pill-chip" onclick="quickFillTeach('Distributed Hash Tables & Consistent Hashing')">🌐 Consistent Hashing</button>
+            <span class="pills-label">Suggestions:</span>
+            <button class="pill-chip" onclick="quickFillTeach('Neural Networks and Gradient Descent')">Gradient Descent</button>
+            <button class="pill-chip" onclick="quickFillTeach('Transformers & Self-Attention Mechanics')">Self-Attention</button>
+            <button class="pill-chip" onclick="quickFillTeach('Concurrency: Mutexes, Locks & Semaphores')">OS Concurrency</button>
+            <button class="pill-chip" onclick="quickFillTeach('Distributed Hash Tables & Consistent Hashing')">Consistent Hashing</button>
         </div>
         <div class="teacher-box">
-            <input type="text" id="teachTopicDirect" placeholder="Example: Transformers and Attention Mechanism" onkeydown="if(event.key==='Enter') teachTopicDirect()">
+            <input type="text" id="teachTopicDirect" placeholder="Example: Attention Mechanism in Transformers" onkeydown="if(event.key==='Enter') teachTopicDirect()">
             <select id="teachLengthDirect">
-                <option value="short">Short (High-Yield)</option>
-                <option value="medium" selected>Medium (In-Depth)</option>
-                <option value="long">Deep (Masterclass)</option>
+                <option value="short">Short</option>
+                <option value="medium" selected>Medium</option>
+                <option value="long">Deep</option>
             </select>
             <button class="primary-btn" id="teachBtnDirect" onclick="teachTopicDirect()">
-                <span>Teach Me ⚡</span>
+                <span>Teach Topic</span>
             </button>
         </div>
         <div id="lessonOutputDirect" class="output-card">
             <div class="empty-state">
                 <div class="empty-icon">📖</div>
-                <h3>Your masterclass lesson will appear here</h3>
-                <p>Select a suggestion above or enter a topic to begin streaming.</p>
+                <h3>Your lesson will appear here</h3>
+                <p>Select a suggestion above or enter a topic to begin reading.</p>
             </div>
         </div>
     </section>
@@ -462,29 +427,29 @@
     ==================================================== -->
     <section id="chat" class="section">
         <div class="section-intro">
-            <span class="badge">DOCUMENT ASSISTANT</span>
-            <h2>Ask your Study Material</h2>
-            <p>Contextual doubt resolution grounded directly in your uploaded notes.</p>
+            <span class="badge">Document Inquiries</span>
+            <h2>Ask Study Material</h2>
+            <p>Targeted doubt resolution grounded directly in your uploaded notes.</p>
         </div>
         <div class="section-quick-pills">
-            <span class="pills-label">Quick Inquiries:</span>
-            <button class="pill-chip" onclick="quickFillChat('Summarize the most important takeaways from this document.')">📋 Key Takeaways</button>
-            <button class="pill-chip" onclick="quickFillChat('Explain the most complex theorem or formula in simple terms.')">💡 Simplify Concept</button>
-            <button class="pill-chip" onclick="quickFillChat('What are the top 5 high-yield exam questions from these notes?')">🎓 Exam Questions</button>
+            <span class="pills-label">Sample Questions:</span>
+            <button class="pill-chip" onclick="quickFillChat('Summarize the most important takeaways from this document.')">Key Takeaways</button>
+            <button class="pill-chip" onclick="quickFillChat('Explain the most complex theorem or formula in simple terms.')">Simplify Concept</button>
+            <button class="pill-chip" onclick="quickFillChat('What are the top 5 high-yield exam questions from these notes?')">Exam Questions</button>
         </div>
         <div class="chat-container">
             <div id="chatMessagesDirect" class="chat-messages">
                 <div class="message ai-message">
                     <div class="message-avatar">A</div>
                     <div class="message-content">
-                        <strong>ARC LEARN Tutor</strong>
-                        <p>Ask me anything from your study material.</p>
+                        <strong>ARC Learn Tutor</strong>
+                        <p>Ask me any question based on your uploaded study material.</p>
                     </div>
                 </div>
             </div>
             <div class="chat-input">
                 <input type="text" id="chatQuestionDirect" placeholder="Ask a question about your study material..." onkeydown="handleChatKeyDirect(event)">
-                <button class="send-btn" id="chatSendBtnDirect" onclick="sendChatDirect()">→</button>
+                <button class="send-btn" id="chatSendBtnDirect" onclick="sendChatDirect()" title="Send">↑</button>
             </div>
         </div>
     </section>
@@ -494,16 +459,16 @@
     ==================================================== -->
     <section id="arc0" class="section">
         <div class="section-intro">
-            <span class="badge">ARC ZERO</span>
-            <h2>Universal Intelligence</h2>
-            <p>High-speed, zero-knowledge-gap assistant answering any technical inquiry.</p>
+            <span class="badge">General Assistant</span>
+            <h2>ARC Zero</h2>
+            <p>Broad intelligence for inquiries across technical and general domains.</p>
         </div>
         <div class="section-quick-pills">
-            <span class="pills-label">Instant Prompts:</span>
-            <button class="pill-chip" onclick="quickFillARC0('Who is the Prime Minister of India and what are their constitutional executive duties?')">🇮🇳 Prime Minister Duties</button>
-            <button class="pill-chip" onclick="quickFillARC0('Explain the difference between Monolithic and Microkernel OS architectures.')">💻 Microkernel vs Monolithic</button>
-            <button class="pill-chip" onclick="quickFillARC0('How does the Transformer Self-Attention mechanism work mathematically?')">🤖 Attention Math</button>
-            <button class="pill-chip" onclick="quickFillARC0('Explain Byzantine Fault Tolerance and Raft Consensus in distributed systems.')">🛡️ Consensus Protocols</button>
+            <span class="pills-label">Prompts:</span>
+            <button class="pill-chip" onclick="quickFillARC0('Who is the Prime Minister of India and what are their constitutional executive duties?')">Executive Duties</button>
+            <button class="pill-chip" onclick="quickFillARC0('Explain the difference between Monolithic and Microkernel OS architectures.')">Microkernel vs Monolithic</button>
+            <button class="pill-chip" onclick="quickFillARC0('How does the Transformer Self-Attention mechanism work mathematically?')">Attention Mathematics</button>
+            <button class="pill-chip" onclick="quickFillARC0('Explain Byzantine Fault Tolerance and Raft Consensus in distributed systems.')">Consensus Protocols</button>
         </div>
         <div class="chat-container">
             <div id="arc0MessagesDirect" class="chat-messages">
@@ -511,13 +476,13 @@
                     <div class="message-avatar">0</div>
                     <div class="message-content">
                         <strong>ARC Zero</strong>
-                        <p>Hi! I am ARC Zero. Ask me anything without boundaries.</p>
+                        <p>Hello! I am ARC Zero. Ask me any question across any domain.</p>
                     </div>
                 </div>
             </div>
             <div class="chat-input">
                 <input type="text" id="arc0QuestionDirect" placeholder="Ask ARC Zero anything..." onkeydown="handleARC0KeyDirect(event)">
-                <button class="send-btn" id="arc0SendBtnDirect" onclick="sendARC0Direct()">→</button>
+                <button class="send-btn" id="arc0SendBtnDirect" onclick="sendARC0Direct()" title="Send">↑</button>
             </div>
         </div>
     </section>
@@ -527,29 +492,29 @@
     ==================================================== -->
     <section id="quiz" class="section">
         <div class="section-intro">
-            <span class="badge">TURBO QUIZ</span>
-            <h2>Test Your Knowledge</h2>
-            <p>Generate rapid-fire interactive assessments with instant distractor analysis.</p>
+            <span class="badge">Knowledge Check</span>
+            <h2>Practice Assessment</h2>
+            <p>Interactive questions designed to reinforce comprehension with clear explanations.</p>
         </div>
         <div class="section-quick-pills">
-            <span class="pills-label">Quick Quiz Topics:</span>
-            <button class="pill-chip" onclick="quickFillQuiz('Backpropagation & Loss Gradients')">🧠 Backpropagation</button>
-            <button class="pill-chip" onclick="quickFillQuiz('Attention Mechanisms in Transformers')">🤖 Attention Layers</button>
-            <button class="pill-chip" onclick="quickFillQuiz('Deadlocks and Mutual Exclusion')">⚙️ Deadlocks</button>
-            <button class="pill-chip" onclick="quickFillQuiz('Dijkstra Shortest Path Algorithm')">📊 Shortest Paths</button>
+            <span class="pills-label">Topics:</span>
+            <button class="pill-chip" onclick="quickFillQuiz('Backpropagation & Loss Gradients')">Backpropagation</button>
+            <button class="pill-chip" onclick="quickFillQuiz('Attention Mechanisms in Transformers')">Attention Layers</button>
+            <button class="pill-chip" onclick="quickFillQuiz('Deadlocks and Mutual Exclusion')">Deadlocks</button>
+            <button class="pill-chip" onclick="quickFillQuiz('Dijkstra Shortest Path Algorithm')">Shortest Paths</button>
         </div>
         <div class="quiz-start">
             <input type="text" id="quizTopicDirect" placeholder="Topic for quiz..." onkeydown="if(event.key==='Enter') generateQuizDirect()">
             <input type="number" id="quizCountDirect" min="1" max="25" value="5" placeholder="Count">
             <button class="primary-btn" id="quizBtnDirect" onclick="generateQuizDirect()">
-                <span>Generate Quiz ⚡</span>
+                <span>Generate Quiz</span>
             </button>
         </div>
         <div id="quizOutputDirect" class="quiz-output">
             <div class="empty-state">
-                <div class="empty-icon">🎯</div>
+                <div class="empty-icon">✓</div>
                 <h3>Quiz questions will appear here</h3>
-                <p>Enter a topic above or pick a suggestion to generate questions.</p>
+                <p>Enter a topic above or select a suggestion to generate questions.</p>
             </div>
         </div>
     </section>
@@ -558,6 +523,6 @@
 
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-<script src="script.js?v=20260913_v4"></script>
+<script src="script.js?v=20261001_claude"></script>
 </body>
 </html>

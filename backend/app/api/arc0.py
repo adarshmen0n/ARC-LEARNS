@@ -81,21 +81,29 @@ def arc0_chat_stream(data: ARC0Request):
     history_payload = [m.model_dump() for m in data.history] if data.history else None
 
     def safe_arc0_stream():
+        tokens_count = 0
         try:
-            tokens_count = 0
             for chunk in ask_arc0_stream(
                 question,
                 history=history_payload
             ):
                 tokens_count += 1
                 yield chunk
-        except Exception:
+        except Exception as e:
+            logger.warning("ARC Zero streaming error: %s", e)
             if tokens_count == 0:
-                yield (
-                    "**ARC Zero Status Notice:**\n\n"
-                    "The configured OpenRouter API key has reached its daily free-tier request limit (HTTP 429). "
-                    "Please update `OPENROUTER_API_KEY` in `backend/.env` or add credits to unlock unlimited queries."
-                )
+                try:
+                    answer = ask_arc0(
+                        question,
+                        history=history_payload
+                    )
+                    yield answer
+                except Exception as sync_err:
+                    yield (
+                        "**ARC Zero Status Notice:**\n\n"
+                        f"Unable to process query: {sync_err}. "
+                        "Please verify provider API configuration."
+                    )
 
     return StreamingResponse(
         safe_arc0_stream(),
