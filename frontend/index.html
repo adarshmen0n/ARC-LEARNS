@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="style.css?v=20261001_claude">
+    <link rel="stylesheet" href="style.css?v=20261002_claude_v4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -109,7 +109,7 @@
         </div>
 
         <div class="topbar-right">
-            <div class="response-speed-pill" id="speedPill">
+            <div class="response-speed-pill" id="speedPill" style="display: none;">
                 <span class="speed-text" id="speedDisplay">Active</span>
             </div>
 
@@ -123,8 +123,8 @@
         </div>
     </header>
 
-    <!-- LIVE TELEMETRY BAR -->
-    <div class="hud-telemetry-bar">
+    <!-- LIVE TELEMETRY BAR (Retained hidden for script safety) -->
+    <div class="hud-telemetry-bar" style="display: none;" aria-hidden="true">
         <div class="hud-item">
             <span class="hud-label">PRIMARY:</span>
             <strong id="hudPrimaryProvider" class="hud-val">Google Gemini 3 Flash</strong>
@@ -191,27 +191,6 @@
                         <button class="topic-chip" onclick="quickLaunchTopic('Graph Algorithms: Dijkstra and A-Star Pathfinding')">
                             <span>Graph Algorithms</span>
                         </button>
-                    </div>
-                </div>
-
-                <!-- PLATFORM CAPABILITIES STRIP -->
-                <div class="platform-metrics-strip">
-                    <div class="metric-block">
-                        <span class="metric-num">1,000,000</span>
-                        <span class="metric-label">Context Window</span>
-                    </div>
-                    <div class="metric-block">
-                        <span class="metric-num">&lt; 0.3s</span>
-                        <span class="metric-label">Fast Inference</span>
-                    </div>
-                    <div class="metric-block">
-                        <span class="metric-num">Grounded</span>
-                        <span class="metric-label">Vector Retrieval</span>
-                    </div>
-                    <div class="metric-block">
-                        <span class="metric-num">Pedagogical</span>
-                        <span class="metric-label">Structured Teaching</span>
-                    </div>
                 </div>
             </div>
 
@@ -255,9 +234,7 @@
     <section id="studio" class="section">
         <div class="studio-header">
             <div>
-                <span class="badge">Workspace</span>
-                <h2>Study Studio</h2>
-                <p>Upload your material once to teach, query, converse, and assess in a unified workspace.</p>
+                <h2>Workspace</h2>
             </div>
         </div>
 
@@ -306,10 +283,6 @@
 
         <!-- STUDIO TAB 1: AI TEACHER -->
         <div id="studio-teacher" class="studio-tab-panel active-tab">
-            <div class="panel-intro">
-                <h4>Interactive AI Teacher</h4>
-                <p>Enter any topic from your study material to receive a structured lesson.</p>
-            </div>
             <div class="teacher-box">
                 <input type="text" id="teachTopic" placeholder="Topic to teach (e.g., Backpropagation, Raft Consensus)...">
                 <select id="teachLength">
@@ -332,17 +305,13 @@
 
         <!-- STUDIO TAB 2: ASK AI -->
         <div id="studio-ask" class="studio-tab-panel">
-            <div class="panel-intro">
-                <h4>Ask your Study Material</h4>
-                <p>Ask questions grounded directly in your uploaded notes.</p>
-            </div>
             <div class="chat-container">
                 <div id="chatMessages" class="chat-messages">
                     <div class="message ai-message">
                         <div class="message-avatar">A</div>
                         <div class="message-content">
                             <strong>ARC Learn Tutor</strong>
-                            <p>I am ready. Ask me any question based on your uploaded material.</p>
+                            <p>How can I help clarify your study material?</p>
                         </div>
                     </div>
                 </div>
@@ -355,17 +324,13 @@
 
         <!-- STUDIO TAB 3: ARC ZERO -->
         <div id="studio-arc0" class="studio-tab-panel">
-            <div class="panel-intro">
-                <h4>ARC Zero Universal Assistant</h4>
-                <p>Ask anything beyond your study material with broad technical intelligence.</p>
-            </div>
             <div class="chat-container">
                 <div id="arc0Messages" class="chat-messages">
                     <div class="message ai-message">
                         <div class="message-avatar">0</div>
                         <div class="message-content">
                             <strong>ARC Zero</strong>
-                            <p>Hello! I am ARC Zero, your universal technical assistant. Ask me any question.</p>
+                            <p>How can I help you today?</p>
                         </div>
                     </div>
                 </div>
@@ -378,10 +343,6 @@
 
         <!-- STUDIO TAB 4: QUIZ -->
         <div id="studio-quiz" class="studio-tab-panel">
-            <div class="panel-intro">
-                <h4>Concept Assessment</h4>
-                <p>Generate interactive questions with immediate explanations for each answer.</p>
-            </div>
             <div class="quiz-start">
                 <input type="text" id="quizTopic" placeholder="Topic for quiz...">
                 <input type="number" id="quizQuestionCount" min="1" max="25" value="5" placeholder="Count">
@@ -404,12 +365,9 @@
     ==================================================== -->
     <section id="learn" class="section">
         <div class="section-intro">
-            <span class="badge">AI Teacher</span>
             <h2>Guided Learning</h2>
-            <p>Progressive, pedagogical explanations structured around your study material.</p>
         </div>
         <div class="section-quick-pills">
-            <span class="pills-label">Suggestions:</span>
             <button class="pill-chip" onclick="quickFillTeach('Neural Networks and Gradient Descent')">Gradient Descent</button>
             <button class="pill-chip" onclick="quickFillTeach('Transformers & Self-Attention Mechanics')">Self-Attention</button>
             <button class="pill-chip" onclick="quickFillTeach('Concurrency: Mutexes, Locks & Semaphores')">OS Concurrency</button>
@@ -440,12 +398,9 @@
     ==================================================== -->
     <section id="chat" class="section">
         <div class="section-intro">
-            <span class="badge">Document Inquiries</span>
             <h2>Ask Study Material</h2>
-            <p>Targeted doubt resolution grounded directly in your uploaded notes.</p>
         </div>
         <div class="section-quick-pills">
-            <span class="pills-label">Sample Questions:</span>
             <button class="pill-chip" onclick="quickFillChat('Summarize the most important takeaways from this document.')">Key Takeaways</button>
             <button class="pill-chip" onclick="quickFillChat('Explain the most complex theorem or formula in simple terms.')">Simplify Concept</button>
             <button class="pill-chip" onclick="quickFillChat('What are the top 5 high-yield exam questions from these notes?')">Exam Questions</button>
@@ -456,7 +411,7 @@
                     <div class="message-avatar">A</div>
                     <div class="message-content">
                         <strong>ARC Learn Tutor</strong>
-                        <p>Ask me any question based on your uploaded study material.</p>
+                        <p>How can I help clarify your study material?</p>
                     </div>
                 </div>
             </div>
@@ -472,12 +427,9 @@
     ==================================================== -->
     <section id="arc0" class="section">
         <div class="section-intro">
-            <span class="badge">General Assistant</span>
             <h2>ARC Zero</h2>
-            <p>Broad intelligence for inquiries across technical and general domains.</p>
         </div>
         <div class="section-quick-pills">
-            <span class="pills-label">Prompts:</span>
             <button class="pill-chip" onclick="quickFillARC0('Who is the Prime Minister of India and what are their constitutional executive duties?')">Executive Duties</button>
             <button class="pill-chip" onclick="quickFillARC0('Explain the difference between Monolithic and Microkernel OS architectures.')">Microkernel vs Monolithic</button>
             <button class="pill-chip" onclick="quickFillARC0('How does the Transformer Self-Attention mechanism work mathematically?')">Attention Mathematics</button>
@@ -489,7 +441,7 @@
                     <div class="message-avatar">0</div>
                     <div class="message-content">
                         <strong>ARC Zero</strong>
-                        <p>Hello! I am ARC Zero. Ask me any question across any domain.</p>
+                        <p>How can I help you today?</p>
                     </div>
                 </div>
             </div>
@@ -505,12 +457,9 @@
     ==================================================== -->
     <section id="quiz" class="section">
         <div class="section-intro">
-            <span class="badge">Knowledge Check</span>
             <h2>Practice Assessment</h2>
-            <p>Interactive questions designed to reinforce comprehension with clear explanations.</p>
         </div>
         <div class="section-quick-pills">
-            <span class="pills-label">Topics:</span>
             <button class="pill-chip" onclick="quickFillQuiz('Backpropagation & Loss Gradients')">Backpropagation</button>
             <button class="pill-chip" onclick="quickFillQuiz('Attention Mechanisms in Transformers')">Attention Layers</button>
             <button class="pill-chip" onclick="quickFillQuiz('Deadlocks and Mutual Exclusion')">Deadlocks</button>
@@ -536,6 +485,6 @@
 
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-<script src="script.js?v=20261001_claude"></script>
+<script src="script.js?v=20261002_claude_v4"></script>
 </body>
 </html>
