@@ -192,7 +192,34 @@ function showSection(sectionId, button = null) {
 
     });
 
+    if (typeof toggleMobileSidebar === "function") {
+        toggleMobileSidebar(false);
+    }
+
 }
+
+// ============================================================
+// MOBILE NAVIGATION SIDEBAR DRAWER TOGGLE
+// ============================================================
+
+function toggleMobileSidebar(force) {
+    const sidebar = document.querySelector(".sidebar");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    if (!sidebar) return;
+
+    const shouldOpen = force !== undefined ? Boolean(force) : !sidebar.classList.contains("mobile-open");
+
+    if (shouldOpen) {
+        sidebar.classList.add("mobile-open");
+        if (backdrop) backdrop.classList.add("active");
+        document.body.classList.add("menu-locked");
+    } else {
+        sidebar.classList.remove("mobile-open");
+        if (backdrop) backdrop.classList.remove("active");
+        document.body.classList.remove("menu-locked");
+    }
+}
+window.toggleMobileSidebar = toggleMobileSidebar;
 
 
 // ============================================================

@@ -18,22 +18,28 @@
 <!-- Canvas retained invisibly so any legacy callers remain safe -->
 <canvas id="cyberCanvas" style="display: none;" aria-hidden="true"></canvas>
 
+<!-- Mobile Navigation Backdrop Overlay -->
+<div id="sidebarBackdrop" class="sidebar-backdrop" onclick="toggleMobileSidebar(false)"></div>
+
 <!-- =========================
      SIDEBAR NAVIGATION
 ========================= -->
-<aside class="sidebar">
-    <div class="logo" onclick="showSection('landing')">
-        <div class="logo-icon-wrap">
-            <svg class="arc-logo-svg" viewBox="0 0 32 32" fill="none">
-                <rect width="32" height="32" rx="6" fill="#C15F3C"/>
-                <path d="M16 6L24 24H8L16 6Z" fill="#FAF9F5"/>
-                <circle cx="16" cy="18" r="3" fill="#C15F3C"/>
-            </svg>
+<aside class="sidebar" id="sidebar">
+    <div class="logo">
+        <div class="logo-brand" onclick="showSection('landing'); toggleMobileSidebar(false);">
+            <div class="logo-icon-wrap">
+                <svg class="arc-logo-svg" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="6" fill="#C15F3C"/>
+                    <path d="M16 6L24 24H8L16 6Z" fill="#FAF9F5"/>
+                    <circle cx="16" cy="18" r="3" fill="#C15F3C"/>
+                </svg>
+            </div>
+            <div class="logo-text">
+                <h2>ARC LEARN</h2>
+                <span>Learning Platform</span>
+            </div>
         </div>
-        <div class="logo-text">
-            <h2>ARC LEARN</h2>
-            <span>Learning Platform</span>
-        </div>
+        <button class="sidebar-close-btn" id="sidebarCloseBtn" onclick="toggleMobileSidebar(false)" aria-label="Close navigation menu">✕</button>
     </div>
 
     <nav class="navigation">
@@ -87,12 +93,19 @@
     <!-- TOP BAR -->
     <header class="topbar">
         <div class="topbar-left">
-            <div class="engine-badge">
-                <span class="badge-dot"></span>
-                <span>ENGINE READY</span>
-                <span class="engine-tag" id="engineTag">Gemini • Groq • OpenRouter</span>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileSidebar(true)" aria-label="Open navigation menu">
+                <span class="menu-bar"></span>
+                <span class="menu-bar"></span>
+                <span class="menu-bar"></span>
+            </button>
+            <div class="topbar-title-wrap">
+                <div class="engine-badge">
+                    <span class="badge-dot"></span>
+                    <span>ENGINE READY</span>
+                    <span class="engine-tag" id="engineTag">Gemini • Groq • OpenRouter</span>
+                </div>
+                <h1 id="pageTitle">ARC Learn</h1>
             </div>
-            <h1 id="pageTitle">ARC Learn</h1>
         </div>
 
         <div class="topbar-right">
@@ -102,7 +115,7 @@
 
             <div class="profile">
                 <div class="profile-avatar">AM</div>
-                <div>
+                <div class="profile-info">
                     <strong>Adarsh Menon</strong>
                     <small>Student</small>
                 </div>
