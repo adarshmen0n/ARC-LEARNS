@@ -51,7 +51,7 @@ def test_temporal_grounding_arc_learn_creator():
     grounding = get_temporal_grounding("Who built the ARC learn")
     assert grounding is not None
     assert "Adarsh Menon" in grounding
-    assert "Arcadia Technologies Ltd" in grounding  # Mentions that Arcadia is NOT the creator
+    assert "Arcadia" not in grounding
 
 
 def test_temporal_grounding_arc_learn_owner():
@@ -63,10 +63,11 @@ def test_temporal_grounding_arc_learn_owner():
 def test_build_grounded_arc0_prompt_creator():
     prompt = build_grounded_arc0_prompt("Who created ARC learn?")
     assert "Adarsh Menon" in prompt
-    assert "Arcadia Technologies Ltd" in prompt
+    assert "Arcadia" not in prompt
 
 
 def test_arc0_live_answers_who_built_arc_learn():
     answer = ask_arc0("Who built the ARC learn")
     assert "Adarsh Menon" in answer
+    assert "Arcadia" not in answer
 
