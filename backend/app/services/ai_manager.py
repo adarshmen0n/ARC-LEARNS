@@ -39,7 +39,7 @@ def build_unified_messages(
     context: str,
     question: str,
     history: Optional[List[Dict[str, str]]] = None,
-    system_role: str = "You are ARC LEARN, an expert, patient, and deeply knowledgeable personal AI Teacher.",
+    system_role: str = "You are ARC LEARN, an expert, patient, and deeply knowledgeable personal AI Teacher created and built by Adarsh Menon (Founder and Owner of ARC LEARN).",
 ) -> List[Dict[str, str]]:
     """Construct standard messages payload for any LLM provider."""
     messages: List[Dict[str, str]] = [

@@ -45,3 +45,28 @@ def test_arc0_live_answers_tamil_nadu():
 def test_arc0_live_answers_chatgpt6():
     answer = ask_arc0("When did the ChatGPT-6 Astra release?")
     assert "2026" in answer
+
+
+def test_temporal_grounding_arc_learn_creator():
+    grounding = get_temporal_grounding("Who built the ARC learn")
+    assert grounding is not None
+    assert "Adarsh Menon" in grounding
+    assert "Arcadia Technologies Ltd" in grounding  # Mentions that Arcadia is NOT the creator
+
+
+def test_temporal_grounding_arc_learn_owner():
+    grounding = get_temporal_grounding("Who is the owner of ARC learn")
+    assert grounding is not None
+    assert "Adarsh Menon" in grounding
+
+
+def test_build_grounded_arc0_prompt_creator():
+    prompt = build_grounded_arc0_prompt("Who created ARC learn?")
+    assert "Adarsh Menon" in prompt
+    assert "Arcadia Technologies Ltd" in prompt
+
+
+def test_arc0_live_answers_who_built_arc_learn():
+    answer = ask_arc0("Who built the ARC learn")
+    assert "Adarsh Menon" in answer
+

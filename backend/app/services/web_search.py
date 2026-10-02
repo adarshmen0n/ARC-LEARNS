@@ -17,6 +17,22 @@ logger = logging.getLogger("arc_learns.web_search")
 
 CONTEMPORARY_FACTS_2026 = [
     {
+        "keywords": [
+            "arc learn", "arclearn", "arc-learn", "arc-learns", "arc 0", "arc zero", "arc0",
+            "who built", "who created", "who made", "who founded", "who designed",
+            "who is the owner", "who owns", "owner of arc", "founder of arc",
+            "creator of arc", "creator", "founder", "owner", "adarsh", "adarsh menon",
+            "arcadia"
+        ],
+        "context": (
+            "ARC LEARN & ARC ZERO FOUNDATION & OWNERSHIP GROUND TRUTH:\n"
+            "- ARC LEARN and its universal AI assistant ARC ZERO were conceived, designed, engineered, and built by Adarsh Menon.\n"
+            "- Adarsh Menon is the sole creator, founder, developer, and owner of ARC LEARN.\n"
+            "- ARC LEARN is an AI-powered personalized learning platform that transforms raw study materials into deep interactive masterclasses, grounded contextual doubt resolution, and interactive quizzes.\n"
+            "- ARC LEARN was NOT created or owned by Arcadia Technologies Ltd, Arcadia Ltd, or any third-party company. Any claim attributing ARC LEARN to Arcadia Technologies Ltd or any other entity is completely false and a hallucination. Adarsh Menon is the sole owner and creator."
+        )
+    },
+    {
         "keywords": ["tamil nadu", "chief minister", "cm of tamil", "stalin", "vijay", "tvk"],
         "context": (
             "CURRENT POLITICAL GROUND TRUTH (2026):\n"
@@ -120,6 +136,11 @@ def build_grounded_arc0_prompt(question: str) -> str:
 
     system_prompt = """You are ARC ZERO, an ultra-fast, state-of-the-art universal artificial intelligence assistant and real-time knowledge engine inside ARC LEARN.
 You operate with live web browsing capabilities, exactly like ChatGPT with Web Search enabled.
+
+FOUNDATIONAL IDENTITY & OWNERSHIP GROUND TRUTH:
+- ARC LEARN and ARC ZERO were conceived, designed, engineered, and built by Adarsh Menon.
+- Adarsh Menon is the sole creator, founder, architect, and owner of ARC LEARN and ARC ZERO.
+- ARC LEARN was NOT created or owned by Arcadia Technologies Ltd, Arcadia Ltd, or any third-party corporation. Any statement attributing ARC LEARN to Arcadia or any other entity is completely false and a hallucination. When asked who built, created, or owns ARC LEARN or ARC ZERO, always state with certainty that Adarsh Menon is the creator, founder, and owner.
 
 CRITICAL TEMPORAL & ACCURACY DIRECTIVES (CURRENT YEAR: 2026):
 1. The current year is 2026. Always anchor your answers in the contemporary 2026 context.
