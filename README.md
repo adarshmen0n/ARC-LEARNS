@@ -149,3 +149,22 @@ Instead of waiting for the complete response, the frontend receives the response
                    │
                    ▼
                 Student
+
+---
+
+## 📱 Android App
+
+ARC LEARNS ships as an Android app built with [Capacitor](https://capacitorjs.com). The app bundles the `frontend/` folder and talks to the hosted API at `https://arc-learns-api.onrender.com`.
+
+**Download:** every push to `main` builds an APK in GitHub Actions (**Actions → Build Android APK → Artifacts**). Pushing a tag like `v1.0.0` also attaches `ARC-LEARNS.apk` to a GitHub Release.
+
+**Build locally** (requires Android Studio / JDK 21):
+
+```bash
+cd mobile
+npm install
+npm run sync      # copies ../frontend into www/ and syncs the Android project
+npm run open      # opens Android Studio -> Run
+```
+
+Regenerate icons/splash after editing `mobile/assets/`: `npm run icons`.

@@ -8,9 +8,25 @@
 // BACKEND URL
 // ============================================================
 
-const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+// Inside the Android app (Capacitor) the page is served from https://localhost,
+// so detect the native shell first and always talk to the hosted API.
+const IS_NATIVE_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
+const API_BASE = (!IS_NATIVE_APP && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
     ? "http://localhost:8000"
     : "https://arc-learns-api.onrender.com";
+
+// Android hardware back button: return to the home screen first, then exit.
+if (IS_NATIVE_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    window.Capacitor.Plugins.App.addListener("backButton", function() {
+        const active = document.querySelector(".section.active-section");
+        if (active && active.id !== "landing") {
+            showSection("landing");
+        } else {
+            window.Capacitor.Plugins.App.exitApp();
+        }
+    });
+}
 
 // ============================================================
 // TOAST NOTIFICATIONS & COLD START HELPERS
