@@ -34,6 +34,10 @@ allowed_origins = [
     "http://localhost:8000",
     "https://arc-learns.onrender.com",
     "https://arc-learns-api.onrender.com",
+    # Android app (Capacitor WebView origins)
+    "https://localhost",
+    "http://localhost",
+    "capacitor://localhost",
 ]
 if cors_env:
     for origin in cors_env.split(","):
@@ -87,4 +91,4 @@ def status():
         "status": "online",
         "platform": "ARC LEARN",
         "providers": get_provider_status()
-    }
+    }
