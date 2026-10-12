@@ -156,8 +156,8 @@ def generate_fallback_quiz(topic: str, count: int, chunks: List[str]) -> List[Di
     sentences = extract_key_sentences(chunks)
     questions = []
 
-    for i in range(min(count, max(1, len(sentences)))):
-        s = sentences[i % len(sentences)]
+    for i in range(min(count, len(sentences))):
+        s = sentences[i]
         words = s.split()
         if len(words) >= 6:
             key_phrase = " ".join(words[:4])

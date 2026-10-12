@@ -1,5 +1,7 @@
 import json
 import logging
+import re
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -57,6 +59,10 @@ def prepare_context(results):
 # EXTRACT JSON FROM AI RESPONSE
 # ============================================================
 
+# Matches a valid JSON escape (kept as-is) or a lone backslash (to be doubled).
+JSON_ESCAPE = re.compile(r'\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})|\\')
+
+
 def clean_json_response(answer: str) -> str:
 
     if not answer:
@@ -83,17 +89,42 @@ def clean_json_response(answer: str) -> str:
     elif array_start != -1 and array_end != -1:
         text = '{"quiz": ' + text[array_start:array_end + 1] + '}'
 
+    # Models often emit LaTeX (\log, \Theta, \( ... \)) inside JSON strings;
+    # escape any backslash that does not start a valid JSON escape sequence.
+    text = JSON_ESCAPE.sub(lambda m: m.group(0) if len(m.group(0)) > 1 else "\\\\", text)
+
     return text.strip()
 
 
 # ============================================================
-# OUTPUT BUDGET
+# BATCHING
 # ============================================================
 
-def quiz_max_tokens(number_of_questions: int) -> int:
-    # Each question (options, explanation, distractor analysis) needs roughly
-    # 350 tokens; a fixed 2500 cap truncated the JSON beyond ~7 questions.
-    return max(2500, min(600 + 350 * number_of_questions, 16000))
+# A single call asking for many detailed questions overflowed the model's
+# output budget and returned truncated JSON. Generate in small batches instead.
+BATCH_SIZE = 5
+BATCH_MAX_TOKENS = 4096
+MAX_PARALLEL_BATCHES = 3
+
+# Each batch targets a different angle so parallel batches don't repeat.
+BATCH_FOCUSES = [
+    "core definitions, intuition and fundamental properties",
+    "internal mechanics and step-by-step behaviour",
+    "complexity, performance and design trade-offs",
+    "edge cases, common pitfalls and misconceptions",
+    "practical applications and worked scenarios",
+    "comparisons with related concepts and alternatives",
+]
+
+
+def split_into_batches(total: int) -> list:
+    batches = []
+    remaining = total
+    while remaining > 0:
+        size = min(BATCH_SIZE, remaining)
+        batches.append(size)
+        remaining -= size
+    return batches
 
 
 # ============================================================
@@ -169,8 +200,14 @@ def validate_quiz(
 def build_quiz_prompt(
     topic: str,
     number_of_questions: int,
-    context: str
+    context: str,
+    focus: str = ""
 ) -> str:
+
+    focus_rule = (
+        f"\n11. Focus this set of questions on: {focus}. Do not ask generic overview questions outside this focus."
+        if focus else ""
+    )
 
     prompt = f"""You are the ARC LEARN AI Quiz Engine.
 
@@ -195,7 +232,7 @@ PEDAGOGICAL REQUIREMENTS:
 7. `distractor_analysis`: Provide a 1-sentence reason for why each of the 3 incorrect options is wrong or misleading.
 8. `difficulty`: One of "easy", "medium", or "hard".
 9. `concept_tested`: Short 2-5 word label of the specific sub-concept tested.
-10. Strict Grounding: Base questions ONLY on the provided study material. Do not hallucinate facts.
+10. Strict Grounding: Base questions ONLY on the provided study material. Do not hallucinate facts.{focus_rule}
 
 OUTPUT FORMAT:
 Output MUST be raw, valid JSON only. Do not include markdown codeblocks or conversational filler.
@@ -275,37 +312,52 @@ def generate_quiz(
         )
 
     # ========================================================
-    # CREATE PROMPT
+    # ASK AI IN BATCHES WITH RESILIENT FALLBACK
     # ========================================================
 
-    prompt = build_quiz_prompt(
-        topic,
-        number_of_questions,
-        context
-    )
-
-    # ========================================================
-    # ASK AI WITH RESILIENT FALLBACK
-    # ========================================================
+    def run_batch(size: int, focus: str) -> list:
+        prompt = build_quiz_prompt(topic, size, context, focus)
+        try:
+            answer = ask_ai(
+                "",
+                prompt,
+                use_web_search=False,
+                max_tokens=BATCH_MAX_TOKENS
+            )
+            answer = clean_json_response(answer)
+            logger.debug("[QUIZ] Cleaned AI response length: %d", len(answer))
+            quiz_data = json.loads(answer, strict=False)
+            return validate_quiz(quiz_data.get("quiz", []), size)
+        except Exception as error:
+            logger.warning("[QUIZ] AI quiz batch (%d questions) failed: %s", size, error)
+            return []
 
     quiz = []
+    seen_questions = set()
 
-    try:
-        answer = ask_ai(
-            "",
-            prompt,
-            use_web_search=False,
-            max_tokens=quiz_max_tokens(number_of_questions)
-        )
-        answer = clean_json_response(answer)
-        logger.debug("[QUIZ] Cleaned AI response length: %d", len(answer))
-        quiz_data = json.loads(answer)
-        quiz = validate_quiz(
-            quiz_data.get("quiz", []),
-            number_of_questions
-        )
-    except Exception as error:
-        logger.warning("[QUIZ] AI quiz generation failed (%s). Synthesizing grounded quiz directly from study material.", error)
+    def add_unique(questions: list):
+        for item in questions:
+            key = item["question"].strip().lower()
+            if key in seen_questions or len(quiz) >= number_of_questions:
+                continue
+            seen_questions.add(key)
+            quiz.append(item)
+
+    batches = split_into_batches(number_of_questions)
+    focuses = [BATCH_FOCUSES[i % len(BATCH_FOCUSES)] if len(batches) > 1 else "" for i in range(len(batches))]
+
+    with ThreadPoolExecutor(max_workers=MAX_PARALLEL_BATCHES) as pool:
+        for questions in pool.map(run_batch, batches, focuses):
+            add_unique(questions)
+
+    # One top-up pass if some batches failed or returned duplicates
+    missing = number_of_questions - len(quiz)
+    if 0 < missing < number_of_questions:
+        for size in split_into_batches(missing):
+            add_unique(run_batch(size, "sub-concepts not already covered; avoid repeating common introductory questions"))
+
+    if not quiz:
+        logger.warning("[QUIZ] AI quiz generation failed. Synthesizing grounded quiz directly from study material.")
 
     # If AI returned malformed JSON or empty quiz, synthesize grounded questions
     if not quiz:
