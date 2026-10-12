@@ -1037,7 +1037,7 @@ function handleChatKey(event) {
 // QUIZ GENERATION
 // ============================================================
 
-async function generateQuiz() {
+async function generateQuiz(source = "studio") {
     const topicDirect = document.getElementById("quizTopicDirect");
     const topicStudio = document.getElementById("quizTopic");
     const countDirect = document.getElementById("quizCountDirect");
@@ -1045,18 +1045,23 @@ async function generateQuiz() {
     const outDirect = document.getElementById("quizOutputDirect");
     const outStudio = document.getElementById("quizOutput");
 
+    // Read the topic and count from the panel whose button was pressed,
+    // falling back to the other panel's topic only if that one is empty.
+    const fromDirect = source === "direct";
+    const [topicPrimary, topicSecondary] = fromDirect ? [topicDirect, topicStudio] : [topicStudio, topicDirect];
+    const countPrimary = fromDirect ? countDirect : countStudio;
+
     const topic = (
-        (topicDirect && topicDirect.value.trim()) ||
-        (topicStudio && topicStudio.value.trim()) ||
+        (topicPrimary && topicPrimary.value.trim()) ||
+        (topicSecondary && topicSecondary.value.trim()) ||
         ""
     ).trim();
 
-    const count = parseInt(
-        (countDirect && countDirect.value) ||
-        (countStudio && countStudio.value) ||
-        "5",
-        10
-    ) || 5;
+    const maxCount = parseInt((countPrimary && countPrimary.max) || "25", 10) || 25;
+    const count = Math.min(
+        maxCount,
+        Math.max(1, parseInt((countPrimary && countPrimary.value) || "5", 10) || 5)
+    );
 
     if (topicDirect) topicDirect.value = topic;
     if (topicStudio) topicStudio.value = topic;
@@ -2249,7 +2254,7 @@ function handleARC0KeyDirect(event) {
 }
 
 function generateQuizDirect() {
-    generateQuiz();
+    generateQuiz("direct");
 }
 
 function quickFillARC0(promptText) {
@@ -2281,7 +2286,7 @@ function quickFillQuiz(topic) {
     const sTopic = document.getElementById("quizTopic");
     if (dTopic) dTopic.value = topic;
     if (sTopic) sTopic.value = topic;
-    generateQuiz();
+    generateQuiz("direct");
 }
 
 function copyLessonText(btn) {
