@@ -7,7 +7,19 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="style.css?v=20261002_claude_v4">
+    <meta name="theme-color" content="#FAF9F5">
+    <!-- Apply the saved (or system) theme before first paint to avoid a light flash -->
+    <script>
+        (function () {
+            var theme = "light";
+            try { theme = localStorage.getItem("arc-theme") || ""; } catch (e) {}
+            if (theme !== "light" && theme !== "dark") {
+                theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css?v=20261012_switch">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -29,9 +41,9 @@
         <div class="logo-brand" onclick="showSection('landing'); toggleMobileSidebar(false);">
             <div class="logo-icon-wrap">
                 <svg class="arc-logo-svg" viewBox="0 0 32 32" fill="none">
-                    <rect width="32" height="32" rx="6" fill="#C15F3C"/>
-                    <path d="M16 6L24 24H8L16 6Z" fill="#FAF9F5"/>
-                    <circle cx="16" cy="18" r="3" fill="#C15F3C"/>
+                    <rect width="32" height="32" rx="6" style="fill: var(--logo-bg)"/>
+                    <path d="M16 6L24 24H8L16 6Z" style="fill: var(--logo-fg)"/>
+                    <circle cx="16" cy="18" r="3" style="fill: var(--logo-bg)"/>
                 </svg>
             </div>
             <div class="logo-text">
@@ -109,6 +121,15 @@
         </div>
 
         <div class="topbar-right">
+            <button class="theme-switch" id="themeToggle" type="button" role="switch" aria-checked="false" onclick="toggleTheme()" aria-label="Dark mode" title="Switch to dark mode">
+                <span class="theme-switch-track">
+                    <span class="theme-switch-icon theme-switch-sun"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span>
+                    <span class="theme-switch-icon theme-switch-moon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+                    <span class="theme-switch-knob"></span>
+                </span>
+                <span class="theme-switch-label" id="themeSwitchLabel">Light</span>
+            </button>
+
             <div class="response-speed-pill" id="speedPill" style="display: none;">
                 <span class="speed-text" id="speedDisplay">Active</span>
             </div>
@@ -485,6 +506,6 @@
 
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-<script src="script.js?v=20261002_claude_v4"></script>
+<script src="script.js?v=20261012_switch"></script>
 </body>
 </html>

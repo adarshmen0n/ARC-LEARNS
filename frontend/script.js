@@ -603,7 +603,7 @@ async function createAPIError(
 // AI TEACHER
 // ============================================================
 
-async function teachTopic() {
+async function teachTopic(source = "studio") {
     const topicDirect = document.getElementById("teachTopicDirect");
     const topicStudio = document.getElementById("teachTopic");
     const lenDirect = document.getElementById("teachLengthDirect");
@@ -611,17 +611,19 @@ async function teachTopic() {
     const outDirect = document.getElementById("lessonOutputDirect");
     const outStudio = document.getElementById("lessonOutput");
 
+    // Read the topic and length from the panel whose button was pressed,
+    // falling back to the other panel only if that one is empty.
+    const fromDirect = source === "direct";
+    const [topicPrimary, topicSecondary] = fromDirect ? [topicDirect, topicStudio] : [topicStudio, topicDirect];
+    const lenPrimary = fromDirect ? lenDirect : lenStudio;
+
     const topic = (
-        (topicDirect && topicDirect.value.trim()) ||
-        (topicStudio && topicStudio.value.trim()) ||
+        (topicPrimary && topicPrimary.value.trim()) ||
+        (topicSecondary && topicSecondary.value.trim()) ||
         ""
     ).trim();
 
-    const length = (
-        (lenDirect && lenDirect.value) ||
-        (lenStudio && lenStudio.value) ||
-        "medium"
-    );
+    const length = (lenPrimary && lenPrimary.value) || "medium";
 
     if (topicDirect) topicDirect.value = topic;
     if (topicStudio) topicStudio.value = topic;
@@ -1397,7 +1399,7 @@ function showQuizResult() {
     if (missedConcepts.length > 0) {
         summaryHtml += `
             <div style="margin-top: 18px;">
-                <strong style="color: #cbd5e1; font-size: 13px;">CONCEPTS RECOMMENDED FOR REVISION:</strong>
+                <strong style="color: var(--text-secondary); font-size: 13px;">CONCEPTS RECOMMENDED FOR REVISION:</strong>
                 <div class="concepts-to-revise">
                     ${missedConcepts.map(c => `<span class="concept-pill">📖 ${escapeHTML(c)}</span>`).join("")}
                 </div>
@@ -2221,7 +2223,7 @@ async function sendARC0FromUI() {
 // ============================================================
 
 function teachTopicDirect() {
-    teachTopic();
+    teachTopic("direct");
 }
 
 function sendChatDirect() {
@@ -2271,7 +2273,7 @@ function quickFillTeach(topic) {
     const sTopic = document.getElementById("teachTopic");
     if (dTopic) dTopic.value = topic;
     if (sTopic) sTopic.value = topic;
-    teachTopic();
+    teachTopic("direct");
 }
 
 function quickFillQuiz(topic) {
@@ -2431,3 +2433,33 @@ if (document.readyState === "loading") {
     attachDirectActionListeners();
 }
 
+
+// ============================================================
+// LIGHT / DARK THEME
+// ============================================================
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#0B0B0B" : "#FAF9F5");
+
+    const btn = document.getElementById("themeToggle");
+    if (btn) {
+        btn.setAttribute("aria-checked", theme === "dark" ? "true" : "false");
+        btn.setAttribute("title", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    }
+
+    const label = document.getElementById("themeSwitchLabel");
+    if (label) label.textContent = theme === "dark" ? "Dark" : "Light";
+}
+
+function toggleTheme() {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("arc-theme", next); } catch (e) {}
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    applyTheme(document.documentElement.getAttribute("data-theme") || "light");
+});
