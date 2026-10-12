@@ -1399,7 +1399,7 @@ function showQuizResult() {
     if (missedConcepts.length > 0) {
         summaryHtml += `
             <div style="margin-top: 18px;">
-                <strong style="color: #cbd5e1; font-size: 13px;">CONCEPTS RECOMMENDED FOR REVISION:</strong>
+                <strong style="color: var(--text-secondary); font-size: 13px;">CONCEPTS RECOMMENDED FOR REVISION:</strong>
                 <div class="concepts-to-revise">
                     ${missedConcepts.map(c => `<span class="concept-pill">📖 ${escapeHTML(c)}</span>`).join("")}
                 </div>
@@ -2433,3 +2433,31 @@ if (document.readyState === "loading") {
     attachDirectActionListeners();
 }
 
+
+// ============================================================
+// LIGHT / DARK THEME
+// ============================================================
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#0B0B0B" : "#FAF9F5");
+
+    const btn = document.getElementById("themeToggle");
+    if (btn) {
+        const label = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+        btn.setAttribute("aria-label", label);
+        btn.setAttribute("title", label);
+    }
+}
+
+function toggleTheme() {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("arc-theme", next); } catch (e) {}
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    applyTheme(document.documentElement.getAttribute("data-theme") || "light");
+});
