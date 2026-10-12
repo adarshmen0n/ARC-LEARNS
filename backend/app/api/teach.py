@@ -76,6 +76,15 @@ def prepare_context(results):
 # BUILD TEACHING PROMPT (PEDAGOGICAL MASTERCLASS ENGINE)
 # ============================================================
 
+# Output budget per lesson depth; without this every length shared the same
+# 2500-token cap, so "long" lessons were cut to roughly medium size.
+LENGTH_MAX_TOKENS = {
+    "short": 1200,
+    "medium": 2500,
+    "long": 6000,
+}
+
+
 def build_teach_prompt(
     topic: str,
     length: str,
@@ -88,6 +97,7 @@ DEPTH LEVEL: FOCUSED / HIGH-YIELD LESSON
 - Provide a clear, punchy, high-yield lesson that immediately builds deep comprehension.
 - Focus on the core intuition, mechanical essence, a crisp worked example or formula breakdown, the primary pitfall to avoid, and essential memory anchors.
 - Thorough and explanatory, never a shallow bullet list.
+- TARGET LENGTH: about 400-600 words in total. Keep every section brief (a short paragraph or a few bullets each).
 """
     elif length == "long":
         depth_guide = """
@@ -95,6 +105,7 @@ DEPTH LEVEL: COMPREHENSIVE MASTERCLASS CHAPTER
 - Deliver an exhaustive, textbook-grade chapter covering every dimension of the topic found in the study material.
 - Break down the theoretical grounding, underlying mechanics, step-by-step mathematical derivations or full code implementations with line-by-line breakdown, edge cases, trade-offs, multiple common student misconceptions, and rigorous practice problems.
 - Write in deep, engaging explanatory prose with rich structural organization.
+- TARGET LENGTH: about 2500-3500 words in total. Expand every section fully; use subsections (###) where helpful.
 """
     else:  # medium
         depth_guide = """
@@ -102,6 +113,7 @@ DEPTH LEVEL: IN-DEPTH TUTORIAL
 - Deliver a comprehensive, well-paced tutorial that guides the student from fundamental intuition to technical mastery.
 - Provide clear narrative progression, rigorous conceptual explanation, a complete worked example or code demonstration, common pitfalls, and active-recall questions.
 - Balance depth with clarity.
+- TARGET LENGTH: about 1000-1500 words in total.
 """
 
     prompt = f"""You are the ARC LEARN AI Teacher, an elite, patient, and deeply knowledgeable personal educator.
@@ -208,7 +220,8 @@ def teach_topic(data: TeachRequest):
         lesson = ask_ai(
             "",
             prompt,
-            use_web_search=False
+            use_web_search=False,
+            max_tokens=LENGTH_MAX_TOKENS[length]
         )
     except Exception as e:
         logger.warning("Cloud AI provider offline/rate-limited (%s). Synthesizing grounded pedagogical lesson.", e)
@@ -265,7 +278,7 @@ def teach_topic_stream(
     def stream_with_fallback():
         tokens_count = 0
         try:
-            for chunk in ask_ai_stream("", prompt, use_web_search=False):
+            for chunk in ask_ai_stream("", prompt, use_web_search=False, max_tokens=LENGTH_MAX_TOKENS[length]):
                 tokens_count += 1
                 yield chunk
         except Exception as e:

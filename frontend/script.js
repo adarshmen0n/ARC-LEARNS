@@ -603,7 +603,7 @@ async function createAPIError(
 // AI TEACHER
 // ============================================================
 
-async function teachTopic() {
+async function teachTopic(source = "studio") {
     const topicDirect = document.getElementById("teachTopicDirect");
     const topicStudio = document.getElementById("teachTopic");
     const lenDirect = document.getElementById("teachLengthDirect");
@@ -611,17 +611,19 @@ async function teachTopic() {
     const outDirect = document.getElementById("lessonOutputDirect");
     const outStudio = document.getElementById("lessonOutput");
 
+    // Read the topic and length from the panel whose button was pressed,
+    // falling back to the other panel only if that one is empty.
+    const fromDirect = source === "direct";
+    const [topicPrimary, topicSecondary] = fromDirect ? [topicDirect, topicStudio] : [topicStudio, topicDirect];
+    const lenPrimary = fromDirect ? lenDirect : lenStudio;
+
     const topic = (
-        (topicDirect && topicDirect.value.trim()) ||
-        (topicStudio && topicStudio.value.trim()) ||
+        (topicPrimary && topicPrimary.value.trim()) ||
+        (topicSecondary && topicSecondary.value.trim()) ||
         ""
     ).trim();
 
-    const length = (
-        (lenDirect && lenDirect.value) ||
-        (lenStudio && lenStudio.value) ||
-        "medium"
-    );
+    const length = (lenPrimary && lenPrimary.value) || "medium";
 
     if (topicDirect) topicDirect.value = topic;
     if (topicStudio) topicStudio.value = topic;
@@ -2221,7 +2223,7 @@ async function sendARC0FromUI() {
 // ============================================================
 
 function teachTopicDirect() {
-    teachTopic();
+    teachTopic("direct");
 }
 
 function sendChatDirect() {
@@ -2271,7 +2273,7 @@ function quickFillTeach(topic) {
     const sTopic = document.getElementById("teachTopic");
     if (dTopic) dTopic.value = topic;
     if (sTopic) sTopic.value = topic;
-    teachTopic();
+    teachTopic("direct");
 }
 
 function quickFillQuiz(topic) {
