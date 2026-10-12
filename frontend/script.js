@@ -2446,10 +2446,12 @@ function applyTheme(theme) {
 
     const btn = document.getElementById("themeToggle");
     if (btn) {
-        const label = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
-        btn.setAttribute("aria-label", label);
-        btn.setAttribute("title", label);
+        btn.setAttribute("aria-checked", theme === "dark" ? "true" : "false");
+        btn.setAttribute("title", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
     }
+
+    const label = document.getElementById("themeSwitchLabel");
+    if (label) label.textContent = theme === "dark" ? "Dark" : "Light";
 }
 
 function toggleTheme() {

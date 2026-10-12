@@ -2139,34 +2139,86 @@ select {
 }
 
 /* ============================================================
-   THEME TOGGLE
+   THEME SWITCH (sliding lever)
 ============================================================ */
 
-.theme-toggle {
+.theme-switch {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    gap: 8px;
     flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--btn-secondary-border);
-    background-color: var(--btn-secondary-bg);
-    color: var(--text-primary);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.theme-toggle:hover {
-    background-color: var(--btn-secondary-hover);
-    border-color: var(--border-strong);
+.theme-switch-track {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 60px;
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background-color: var(--bg-active);
+    border: 1px solid var(--border-strong);
+    transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
-.theme-toggle svg {
-    width: 18px;
-    height: 18px;
+.theme-switch-icon {
+    display: inline-flex;
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
 }
 
-.theme-toggle .icon-sun { display: none; }
-:root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
-:root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+.theme-switch-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.theme-switch-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-color: var(--bg-card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease;
+}
+
+.theme-switch:hover .theme-switch-track {
+    border-color: var(--text-muted);
+}
+
+.theme-switch:focus-visible {
+    outline: none;
+}
+
+.theme-switch:focus-visible .theme-switch-track {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+}
+
+:root[data-theme="dark"] .theme-switch-knob {
+    transform: translateX(30px);
+    background-color: #E5E5E5;
+}
+
+.theme-switch-label {
+    min-width: 30px;
+    text-align: left;
+}
+
+@media (max-width: 600px) {
+    .theme-switch-label {
+        display: none;
+    }
+}
