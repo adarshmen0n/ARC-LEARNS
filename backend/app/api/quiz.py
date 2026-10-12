@@ -87,6 +87,16 @@ def clean_json_response(answer: str) -> str:
 
 
 # ============================================================
+# OUTPUT BUDGET
+# ============================================================
+
+def quiz_max_tokens(number_of_questions: int) -> int:
+    # Each question (options, explanation, distractor analysis) needs roughly
+    # 350 tokens; a fixed 2500 cap truncated the JSON beyond ~7 questions.
+    return max(2500, min(600 + 350 * number_of_questions, 16000))
+
+
+# ============================================================
 # VALIDATE QUIZ
 # ============================================================
 
@@ -285,7 +295,7 @@ def generate_quiz(
             "",
             prompt,
             use_web_search=False,
-            max_tokens=2500
+            max_tokens=quiz_max_tokens(number_of_questions)
         )
         answer = clean_json_response(answer)
         logger.debug("[QUIZ] Cleaned AI response length: %d", len(answer))
